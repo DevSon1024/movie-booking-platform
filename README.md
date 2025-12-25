@@ -3,7 +3,7 @@
 > A full-stack MERN application for booking movie tickets, managing theatres, and submitting verified reviews. Built as a Final Year Major Project.
 
 ![MERN Stack](https://img.shields.io/badge/MERN-Stack-green)
-![Status](https://img.shields.io/badge/Status-Completed-blue)
+![Status](https://img.shields.io/badge/Status-Incomplete-red)
 
 ## 🚀 Features
 
