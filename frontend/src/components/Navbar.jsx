@@ -32,17 +32,24 @@ const Navbar = () => {
             </Link>
 
             {userInfo ? (
-              // Show this if Logged In
               <div className="flex items-center space-x-4">
+                {/* 1. ADMIN DASHBOARD LINK (Only visible to Admins) */}
                 {userInfo.role === "admin" && (
-                  <span className="bg-red-600 px-2 py-1 rounded text-xs font-bold uppercase">
-                    Admin
-                  </span>
+                  <Link
+                    to="/admin"
+                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded font-bold transition flex items-center gap-2"
+                  >
+                    <span>🛡️ Admin Panel</span>
+                  </Link>
                 )}
+
+                {/* User Name Badge */}
                 <div className="flex items-center space-x-1 text-gray-300">
-                  <FaUserCircle />
-                  <span>{userInfo.name}</span>
+                  <FaUserCircle className="text-xl" />
+                  <span className="font-semibold">{userInfo.name}</span>
                 </div>
+
+                {/* Logout Button */}
                 <button
                   onClick={handleLogout}
                   className="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded transition"
