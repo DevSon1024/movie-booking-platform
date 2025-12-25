@@ -5,6 +5,7 @@ import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
+import ProfilePage from "./pages/ProfilePage";
 
 function App() {
   return (
@@ -21,11 +22,16 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
             {/* We will add Booking/Admin routes later */}
             {/* Protect Booking Route so only logged in users can see it */}
-            <Route
-              path="/book/:id"
-              element={
+            <Route path="/book/:id" element={
                 <ProtectedRoute>
                   <BookingPage />
+                </ProtectedRoute>
+              }
+            />
+            {/* Protected Profile Route */}
+            <Route path="/profile" element={
+                <ProtectedRoute>
+                  <ProfilePage />
                 </ProtectedRoute>
               }
             />

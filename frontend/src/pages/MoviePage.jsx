@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { format } from 'date-fns'; // Run: npm install date-fns
+import { format } from 'date-fns';
 
 const MoviePage = () => {
   const { id } = useParams();
