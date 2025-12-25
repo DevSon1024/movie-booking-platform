@@ -1,11 +1,13 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { Toaster } from "react-hot-toast"; // We will install this for nice alerts
+import { Toaster } from "react-hot-toast";
 import Navbar from "./components/Navbar";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import ProfilePage from "./pages/ProfilePage";
+import MoviePage from "./pages/MoviePage";
+import BookingPage from "./pages/BookingPage";
 
 function App() {
   return (
