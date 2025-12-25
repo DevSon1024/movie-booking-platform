@@ -5,6 +5,8 @@ import userRoutes from './routes/userRoutes.js';
 import movieRoutes from './routes/movieRoutes.js';
 import theatreRoutes from './routes/theatreRoutes.js';
 import showRoutes from './routes/showRoutes.js';
+import bookingRoutes from './routes/bookingRoutes.js';
+import reviewRoutes from './routes/reviewRoutes.js';
 
 const app = express();
 
@@ -18,6 +20,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/movies', movieRoutes);
 app.use('/api/theatres', theatreRoutes); 
 app.use('/api/shows', showRoutes);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 app.use(express.json());
 app.use(express.urlencoded({extended:true}));
