@@ -27,7 +27,7 @@ const movieSchema = new mongoose.Schema(
       required: true,
     },
     posterUrl: {
-      type: String, // We will store just the URL string
+      type: String, 
       required: true,
     },
     // VIVA TOPIC: Lifecycle Management
@@ -37,6 +37,11 @@ const movieSchema = new mongoose.Schema(
       default: "UPCOMING",
       required: true,
     },
+    // VIVA TOPIC: Soft Delete implementation
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    }
   },
   {
     timestamps: true,
