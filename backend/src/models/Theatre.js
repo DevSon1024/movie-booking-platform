@@ -8,23 +8,45 @@ const theatreSchema = new mongoose.Schema({
   city: {
     type: String,
     required: true,
+    index: true // Indexed for faster search by city
   },
-  // We store simple screen configurations here
+  address: {
+    type: String,
+    required: true,
+  },
+  facilities: [{
+    type: String, // e.g. ["Dolby Atmos", "Food Court", "Parking"]
+  }],
   screens: [{
     name: { type: String, required: true }, // e.g., "Screen 1", "IMAX Hall"
+    type: { 
+      type: String, 
+      enum: ['Standard', 'IMAX', '3D', '4DX'],
+      default: 'Standard'
+    },
     seatLayout: {
-      rows: { type: Number, required: true }, // e.g., 10 rows
-      cols: { type: Number, required: true }, // e.g., 12 seats per row
-      price: { type: Number, required: true }, // Base price for this screen
-    }
+      rows: { type: Number, required: true }, 
+      cols: { type: Number, required: true }, 
+    },
+    capacity: { type: Number }, // Calculated (rows * cols)
   }],
   owner: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User', // Link to the Admin who created it
+    ref: 'User',
     required: true,
   }
 }, {
   timestamps: true,
+});
+
+// Pre-save hook to calculate capacity automatically
+theatreSchema.pre('save', function(next) {
+  if (this.screens) {
+    this.screens.forEach(screen => {
+      screen.capacity = screen.seatLayout.rows * screen.seatLayout.cols;
+    });
+  }
+  next();
 });
 
 const Theatre = mongoose.model('Theatre', theatreSchema);

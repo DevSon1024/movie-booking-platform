@@ -7,6 +7,7 @@ import RegisterPage from "./pages/RegisterPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import ProfilePage from "./pages/ProfilePage";
 import MoviePage from "./pages/MoviePage";
+import AdminTheatresPage from './pages/admin/AdminTheatresPage';
 import BookingPage from "./pages/BookingPage";
 
 // --- NEW ADMIN IMPORTS ---
@@ -48,6 +49,7 @@ function App() {
               <Route path="" element={<AdminDashboard />}>
                 {/* These nest inside the Dashboard's <Outlet /> */}
                 <Route path="movies" element={<AdminMoviesPage />} />
+                <Route path="theatres" element={<AdminTheatresPage />} />
                 <Route path="settings" element={<AdminSettingsPage />} />
               </Route>
             </Route>
