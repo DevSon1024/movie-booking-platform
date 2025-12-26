@@ -22,13 +22,12 @@ const RegisterPage = () => {
   useEffect(() => {
     if (userInfo) {
       toast.success(`Welcome, ${userInfo.name}!`);
-      navigate("/"); // Go straight to Home, no need to login again
-    }
-
-    if (userInfo.role === "admin") {
-      navigate("/admin");
-    } else {
-      navigate("/");
+      
+      if (userInfo.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
     }
     if (error) {
       toast.error(error);

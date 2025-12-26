@@ -1,13 +1,71 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, Outlet } from 'react-router-dom';
-import { FaFilm, FaTheaterMasks, FaCalendarAlt, FaCog, FaChartLine, FaMoneyBillWave, FaTicketAlt } from 'react-icons/fa';
+import { FaFilm, FaTheaterMasks, FaCalendarAlt, FaCog, FaChartLine, FaMoneyBillWave, FaTicketAlt, FaFilter } from 'react-icons/fa';
+import { getAdminStats } from '../../services/adminService';
 
 const AdminDashboard = () => {
-  // Mock Analytics Data (For Viva Presentation)
-  const stats = [
-    { title: 'Total Revenue', value: '$12,450', icon: <FaMoneyBillWave />, color: 'bg-green-600' },
-    { title: 'Tickets Sold', value: '843', icon: <FaTicketAlt />, color: 'bg-blue-600' },
-    { title: 'Active Movies', value: '12', icon: <FaFilm />, color: 'bg-purple-600' },
+  const [stats, setStats] = useState({
+    revenue: 0,
+    ticketsSold: 0,
+    activeMovies: 0
+  });
+  
+  // Date Filtering State
+  const [dateRange, setDateRange] = useState({
+    startDate: '',
+    endDate: ''
+  });
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD', // Default until Phase 5
+    }).format(amount);
+  };
+
+  useEffect(() => {
+    fetchStats();
+  }, [dateRange]);
+
+  const fetchStats = async () => {
+    try {
+      setLoading(true);
+      const data = await getAdminStats(dateRange.startDate, dateRange.endDate);
+      setStats(data);
+      setLoading(false);
+    } catch (err) {
+      console.error(err);
+      setError('Failed to load dashboard stats');
+      setLoading(false);
+    }
+  };
+
+  const handleDateChange = (e) => {
+    setDateRange({ ...dateRange, [e.target.name]: e.target.value });
+  };
+
+  const statCards = [
+    { 
+      title: 'Total Revenue', 
+      value: formatCurrency(stats.revenue), 
+      icon: <FaMoneyBillWave />, 
+      color: 'bg-green-600' 
+    },
+    { 
+      title: 'Tickets Sold', 
+      value: stats.ticketsSold, 
+      icon: <FaTicketAlt />, 
+      color: 'bg-blue-600' 
+    },
+    { 
+      title: 'Active Movies', 
+      value: stats.activeMovies, 
+      icon: <FaFilm />, 
+      color: 'bg-purple-600' 
+    },
   ];
 
   return (
@@ -38,26 +96,55 @@ const AdminDashboard = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 p-8">
-        <h1 className="text-3xl font-bold mb-8">Dashboard Overview</h1>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          {stats.map((stat, index) => (
-            <div key={index} className={`${stat.color} p-6 rounded-lg shadow-lg flex items-center justify-between`}>
-              <div>
-                <p className="text-gray-200 text-sm uppercase">{stat.title}</p>
-                <p className="text-3xl font-bold">{stat.value}</p>
-              </div>
-              <div className="text-4xl opacity-50">{stat.icon}</div>
+        <div className="flex flex-col md:flex-row justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Dashboard Overview</h1>
+          
+          {/* Date Filter Section */}
+          <div className="flex items-center space-x-4 bg-gray-800 p-3 rounded-lg border border-gray-700">
+            <FaFilter className="text-gray-400" />
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-400">From:</span>
+              <input 
+                type="date" 
+                name="startDate"
+                value={dateRange.startDate}
+                onChange={handleDateChange}
+                className="bg-gray-700 text-white px-2 py-1 rounded text-sm focus:outline-none focus:ring-1 focus:ring-red-500"
+              />
             </div>
-          ))}
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-400">To:</span>
+              <input 
+                type="date" 
+                name="endDate"
+                value={dateRange.endDate}
+                onChange={handleDateChange}
+                className="bg-gray-700 text-white px-2 py-1 rounded text-sm focus:outline-none focus:ring-1 focus:ring-red-500"
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Quick Actions / Outlet for Sub-pages */}
+        {loading ? (
+          <p className="text-center text-gray-400">Loading analytics...</p>
+        ) : error ? (
+          <p className="text-center text-red-500">{error}</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            {statCards.map((stat, index) => (
+              <div key={index} className={`${stat.color} p-6 rounded-lg shadow-lg flex items-center justify-between`}>
+                <div>
+                  <p className="text-gray-200 text-sm uppercase">{stat.title}</p>
+                  <p className="text-3xl font-bold">{stat.value}</p>
+                </div>
+                <div className="text-4xl opacity-50">{stat.icon}</div>
+              </div>
+            ))}
+          </div>
+        )}
         <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-          <p className="text-gray-400 mb-4">Select an option from the sidebar to manage content.</p>
-          {/* This is where the child routes (Movies, Settings) will appear */}
           <Outlet /> 
+          
         </div>
       </main>
     </div>
