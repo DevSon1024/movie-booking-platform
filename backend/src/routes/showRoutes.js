@@ -1,13 +1,14 @@
 import express from 'express';
-import { addShow, getShowsByMovie, getShowDetails } from '../controllers/showController.js';
+import { createShow, getShows, deleteShow } from '../controllers/showController.js';
 import { protect, admin } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
 router.route('/')
-  .post(protect, admin, addShow);
+  .get(getShows)
+  .post(protect, admin, createShow);
 
-router.get('/movie/:movieId', getShowsByMovie);
-router.get('/:id', getShowDetails);
+router.route('/:id')
+  .delete(protect, admin, deleteShow);
 
 export default router;

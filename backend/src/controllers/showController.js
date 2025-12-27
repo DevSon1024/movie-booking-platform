@@ -1,50 +1,72 @@
 import Show from '../models/Show.js';
+import Movie from '../models/Movie.js';
 import Theatre from '../models/Theatre.js';
 
-// @desc    Add a new show (and generate seats)
+// @desc    Create a new Show
 // @route   POST /api/shows
 // @access  Private/Admin
-const addShow = async (req, res) => {
-  const { movieId, theatreId, screenName, startTime, priceOverride } = req.body;
+const createShow = async (req, res) => {
+  const { movieId, theatreId, screenName, startTime, price } = req.body;
 
-  // 1. Get Theatre details to know the layout
+  // 1. Fetch Movie to get duration
+  const movie = await Movie.findById(movieId);
+  if (!movie) {
+    res.status(404);
+    throw new Error('Movie not found');
+  }
+
+  // 2. Fetch Theatre to get Screen Layout
   const theatre = await Theatre.findById(theatreId);
   if (!theatre) {
     res.status(404);
     throw new Error('Theatre not found');
   }
 
-  // 2. Find the specific screen
   const screen = theatre.screens.find(s => s.name === screenName);
   if (!screen) {
     res.status(404);
     throw new Error('Screen not found in this theatre');
   }
 
-  // 3. Generate Seat Map Logic
-  // We create an array of seat objects: A1, A2... B1, B2...
-  let generatedSeats = [];
-  const rows = screen.seatLayout.rows; // e.g., 5
-  const cols = screen.seatLayout.cols; // e.g., 8
-  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  // 3. Calculate End Time (Start Time + Duration + 15min buffer for cleaning)
+  const start = new Date(startTime);
+  const end = new Date(start.getTime() + (movie.duration * 60000) + (15 * 60000));
 
-  for (let r = 0; r < rows; r++) {
-    for (let c = 1; c <= cols; c++) {
-      generatedSeats.push({
-        row: alphabet[r],
-        number: c,
-        isBooked: false,
-        price: priceOverride || screen.seatLayout.price
-      });
-    }
+  // 4. CHECK OVERLAP: Ensure no other show exists on this screen during this time
+  const overlappingShow = await Show.findOne({
+    theatre: theatreId,
+    screenName: screenName,
+    $or: [
+      { startTime: { $lt: end }, endTime: { $gt: start } } // Logic: (StartA < EndB) and (EndA > StartB)
+    ]
+  });
+
+  if (overlappingShow) {
+    res.status(400);
+    throw new Error('Show time overlaps with an existing show on this screen.');
   }
 
-  // 4. Create the Show
+  // 5. Generate Seat Map based on Screen Layout (Rows X Cols)
+  const generatedSeats = [];
+  const rowLabels = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  
+  for(let r = 0; r < screen.seatLayout.rows; r++) {
+      for(let c = 1; c <= screen.seatLayout.cols; c++) {
+          generatedSeats.push({
+              row: rowLabels[r],
+              number: c,
+              isBooked: false
+          });
+      }
+  }
+
   const show = new Show({
     movie: movieId,
     theatre: theatreId,
-    screenName: screenName,
-    startTime: startTime,
+    screenName,
+    startTime: start,
+    endTime: end,
+    price,
     seats: generatedSeats
   });
 
@@ -52,31 +74,49 @@ const addShow = async (req, res) => {
   res.status(201).json(createdShow);
 };
 
-// @desc    Get shows by Movie ID (For booking page)
-// @route   GET /api/shows/movie/:movieId
+// @desc    Get All Shows (Filtered by Movie or Date optional)
+// @route   GET /api/shows
 // @access  Public
-const getShowsByMovie = async (req, res) => {
-  const shows = await Show.find({ movie: req.params.movieId })
-    .populate('theatre', 'name city') // Include theatre details
-    .select('-seats.userId'); // Don't send user IDs to frontend (Privacy)
+const getShows = async (req, res) => {
+  const { movieId, date, theatreId } = req.query;
+  let query = {};
+
+  if (movieId) query.movie = movieId;
+  if (theatreId) query.theatre = theatreId;
   
+  // Date Filter (Specific Day)
+  if (date) {
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0,0,0,0);
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23,59,59,999);
+      
+      query.startTime = { $gte: startOfDay, $lte: endOfDay };
+  }
+
+  // Only show future shows if public, or all if admin (simplified for now)
+  // query.startTime = { $gte: new Date() }; 
+
+  const shows = await Show.find(query)
+    .populate('movie', 'title duration')
+    .populate('theatre', 'name city')
+    .sort({ startTime: 1 });
+
   res.json(shows);
 };
 
-// @desc    Get single show details (with seat status)
-// @route   GET /api/shows/:id
-// @access  Public
-const getShowDetails = async (req, res) => {
-  const show = await Show.findById(req.params.id)
-    .populate('movie', 'title')
-    .populate('theatre', 'name city');
+// @desc    Delete Show
+// @route   DELETE /api/shows/:id
+// @access  Private/Admin
+const deleteShow = async (req, res) => {
+    const show = await Show.findById(req.params.id);
+    if(show) {
+        await show.deleteOne();
+        res.json({ message: 'Show deleted'});
+    } else {
+        res.status(404);
+        throw new Error('Show not found');
+    }
+}
 
-  if (show) {
-    res.json(show);
-  } else {
-    res.status(404);
-    throw new Error('Show not found');
-  }
-};
-
-export { addShow, getShowsByMovie, getShowDetails };
+export { createShow, getShows, deleteShow };

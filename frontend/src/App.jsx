@@ -7,7 +7,6 @@ import RegisterPage from "./pages/RegisterPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import ProfilePage from "./pages/ProfilePage";
 import MoviePage from "./pages/MoviePage";
-import AdminTheatresPage from './pages/admin/AdminTheatresPage';
 import BookingPage from "./pages/BookingPage";
 
 // --- NEW ADMIN IMPORTS ---
@@ -15,6 +14,8 @@ import AdminRoute from './routes/AdminRoute';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminMoviesPage from './pages/admin/AdminMoviesPage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
+import AdminTheatresPage from './pages/admin/AdminTheatresPage';
+import AdminShowsPage from './pages/admin/AdminShowsPage';
 
 function App() {
   return (
@@ -50,6 +51,7 @@ function App() {
                 {/* These nest inside the Dashboard's <Outlet /> */}
                 <Route path="movies" element={<AdminMoviesPage />} />
                 <Route path="theatres" element={<AdminTheatresPage />} />
+                <Route path="shows" element={<AdminShowsPage />} />
                 <Route path="settings" element={<AdminSettingsPage />} />
               </Route>
             </Route>

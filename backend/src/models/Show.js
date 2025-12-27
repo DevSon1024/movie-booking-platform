@@ -12,26 +12,26 @@ const showSchema = new mongoose.Schema({
     required: true,
   },
   screenName: {
-    type: String,
+    type: String, // Matches one of the screen names in the Theatre doc
     required: true,
   },
   startTime: {
     type: Date,
     required: true,
   },
-  // Determine if show is booking enabled
-  status: {
-    type: String,
-    enum: ['OPEN', 'SOLD_OUT', 'CANCELLED'],
-    default: 'OPEN'
+  endTime: {
+    type: Date, // Calculated automatically based on Movie duration
+    required: true,
   },
-  // The actual seats for this specific show instance
+  price: {
+    type: Number,
+    required: true,
+  },
   seats: [{
-    row: { type: String, required: true }, // e.g., "A"
-    number: { type: Number, required: true }, // e.g., 1
+    row: String,
+    number: Number,
     isBooked: { type: Boolean, default: false },
-    price: { type: Number, required: true },
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null } // Who booked it?
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' } // If booked
   }]
 }, {
   timestamps: true,
