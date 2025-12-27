@@ -51,7 +51,6 @@
     cd backend
     npm install
     # Create .env file and add your MONGO_URI
-    npm run data:import # Seeds the database with dummy movies/theatres
     npm run dev
     ```
 
@@ -68,18 +67,7 @@
 
 ---
 
-## 🧪 Credentials (For Testing)
-
-| Role | Email | Password |
-| :--- | :--- | :--- |
-| **Admin** | `admin@example.com` | `password123` |
-| **User** | `user@example.com` | `password123` |
-
----
-
-## 📸 Screenshots
-*(Add screenshots of Home Page, Seat Selection, and Booking Success here)*
-
+## Screenshots
 ---
 
 ## 🔮 Future Scope
