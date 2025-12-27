@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { Routes, Route } from "react-router-dom"; 
 import { Toaster } from "react-hot-toast"; 
-// FIX: Import Redux hooks
 import { useDispatch } from "react-redux";
 import { getSettings } from "./redux/slices/settingsSlice";
 
@@ -16,26 +15,26 @@ import BookingPage from "./pages/BookingPage";
 
 // Admin Imports
 import AdminRoute from './routes/AdminRoute';
-import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminDashboard from './pages/admin/AdminDashboard'; // Layout
+import AdminOverview from './pages/admin/AdminOverview';   // Stats (New)
 import AdminMoviesPage from './pages/admin/AdminMoviesPage';
 import AdminTheatresPage from './pages/admin/AdminTheatresPage'; 
 import AdminShowsPage from './pages/admin/AdminShowsPage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 
 function App() {
-  // FIX: Initialize Dispatch
   const dispatch = useDispatch();
 
-  // FIX: Fetch Settings on App Mount
   useEffect(() => {
     dispatch(getSettings());
   }, [dispatch]);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white font-sans">
+    // Default background matches theme
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-sans transition-colors duration-300">
       <Navbar />
 
-      <main className="container mx-auto px-4 py-8">
+      <main>
         <Routes>
           {/* Public */}
           <Route path="/" element={<HomePage />} />
@@ -52,9 +51,13 @@ function App() {
           />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
 
-          {/* Admin */}
+          {/* Admin Routes */}
           <Route path="/admin" element={<AdminRoute />}>
-            <Route path="" element={<AdminDashboard />}>
+            {/* AdminDashboard acts as the Layout (Sidebar) */}
+            <Route element={<AdminDashboard />}>
+              {/* Index route shows Stats */}
+              <Route index element={<AdminOverview />} />
+              
               <Route path="movies" element={<AdminMoviesPage />} />
               <Route path="theatres" element={<AdminTheatresPage />} />
               <Route path="shows" element={<AdminShowsPage />} />
