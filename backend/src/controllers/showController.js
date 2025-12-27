@@ -8,14 +8,12 @@ import Theatre from '../models/Theatre.js';
 const createShow = async (req, res) => {
   const { movieId, theatreId, screenName, startTime, price } = req.body;
 
-  // 1. Fetch Movie to get duration
   const movie = await Movie.findById(movieId);
   if (!movie) {
     res.status(404);
     throw new Error('Movie not found');
   }
 
-  // 2. Fetch Theatre to get Screen Layout
   const theatre = await Theatre.findById(theatreId);
   if (!theatre) {
     res.status(404);
@@ -28,16 +26,14 @@ const createShow = async (req, res) => {
     throw new Error('Screen not found in this theatre');
   }
 
-  // 3. Calculate End Time (Start Time + Duration + 15min buffer for cleaning)
   const start = new Date(startTime);
   const end = new Date(start.getTime() + (movie.duration * 60000) + (15 * 60000));
 
-  // 4. CHECK OVERLAP: Ensure no other show exists on this screen during this time
   const overlappingShow = await Show.findOne({
     theatre: theatreId,
     screenName: screenName,
     $or: [
-      { startTime: { $lt: end }, endTime: { $gt: start } } // Logic: (StartA < EndB) and (EndA > StartB)
+      { startTime: { $lt: end }, endTime: { $gt: start } }
     ]
   });
 
@@ -46,7 +42,6 @@ const createShow = async (req, res) => {
     throw new Error('Show time overlaps with an existing show on this screen.');
   }
 
-  // 5. Generate Seat Map based on Screen Layout (Rows X Cols)
   const generatedSeats = [];
   const rowLabels = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   
@@ -74,7 +69,7 @@ const createShow = async (req, res) => {
   res.status(201).json(createdShow);
 };
 
-// @desc    Get All Shows (Filtered by Movie or Date optional)
+// @desc    Get All Shows (Filtered)
 // @route   GET /api/shows
 // @access  Public
 const getShows = async (req, res) => {
@@ -84,25 +79,38 @@ const getShows = async (req, res) => {
   if (movieId) query.movie = movieId;
   if (theatreId) query.theatre = theatreId;
   
-  // Date Filter (Specific Day)
   if (date) {
       const startOfDay = new Date(date);
       startOfDay.setHours(0,0,0,0);
       const endOfDay = new Date(date);
       endOfDay.setHours(23,59,59,999);
-      
       query.startTime = { $gte: startOfDay, $lte: endOfDay };
   }
 
-  // Only show future shows if public, or all if admin (simplified for now)
-  // query.startTime = { $gte: new Date() }; 
-
   const shows = await Show.find(query)
-    .populate('movie', 'title duration')
-    .populate('theatre', 'name city')
+    .populate('movie', 'title duration language')
+    // FIX: Added 'address facilities' to populate
+    .populate('theatre', 'name city address facilities') 
     .sort({ startTime: 1 });
 
   res.json(shows);
+};
+
+// @desc    Get Single Show by ID
+// @route   GET /api/shows/:id
+// @access  Public
+const getShowById = async (req, res) => {
+  const show = await Show.findById(req.params.id)
+    .populate('movie', 'title duration language')
+    // FIX: Added 'address facilities' here too
+    .populate('theatre', 'name city address facilities'); 
+
+  if (show) {
+    res.json(show);
+  } else {
+    res.status(404);
+    throw new Error('Show not found');
+  }
 };
 
 // @desc    Delete Show
@@ -119,4 +127,4 @@ const deleteShow = async (req, res) => {
     }
 }
 
-export { createShow, getShows, deleteShow };
+export { createShow, getShows, getShowById, deleteShow };

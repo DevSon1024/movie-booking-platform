@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../services/api';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
-import { FaStar } from 'react-icons/fa'; // Ensure react-icons is installed
+import { FaStar } from 'react-icons/fa'; 
 
 const ProfilePage = () => {
   const [bookings, setBookings] = useState([]);
@@ -50,10 +50,28 @@ const TicketCard = ({ booking }) => {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
 
-  // Logic: Has the show ended? (Simple frontend check, backend verifies strictly)
+  // FIX: Safety Check - Prevent crash if Show or Movie was deleted
+  if (!booking.show || !booking.movie) {
+    return (
+      <div className="bg-gray-800 p-6 rounded-lg border border-red-900 shadow-lg flex items-center justify-between">
+         <div>
+             <h3 className="text-red-500 font-bold mb-1">Booking Data Unavailable</h3>
+             <p className="text-gray-400 text-sm">
+                The show or movie for Ticket ID <span className="font-mono text-xs bg-gray-900 p-1 rounded">{booking._id}</span> is no longer active.
+             </p>
+         </div>
+         <div className="text-right">
+             <span className="px-2 py-1 text-xs font-bold rounded bg-gray-700 text-gray-300">
+               {booking.paymentStatus}
+             </span>
+         </div>
+      </div>
+    );
+  }
+
+  // Logic: Has the show ended?
   const showTime = new Date(booking.show.startTime);
   const now = new Date();
-  // Assume movie length is roughly 2 hours for this visual check
   const isPast = now > new Date(showTime.getTime() + 120 * 60000); 
 
   const handleReviewSubmit = async (e) => {
@@ -74,7 +92,7 @@ const TicketCard = ({ booking }) => {
   return (
     <div className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700 flex flex-col md:flex-row shadow-lg">
       {/* Movie Poster */}
-      <div className="md:w-32 bg-gray-900">
+      <div className="md:w-32 bg-gray-900 relative">
         <img 
           src={booking.movie.posterUrl} 
           alt={booking.movie.title} 
@@ -87,7 +105,7 @@ const TicketCard = ({ booking }) => {
         <div className="flex justify-between items-start">
           <div>
             <h3 className="text-xl font-bold text-white">{booking.movie.title}</h3>
-            <p className="text-gray-400 text-sm">{booking.show.theatre.name} | {booking.show.screenName}</p>
+            <p className="text-gray-400 text-sm">{booking.show.theatre?.name || 'Unknown Theatre'} | {booking.show.screenName}</p>
           </div>
           <div className="text-right">
              <span className={`px-2 py-1 text-xs font-bold rounded ${

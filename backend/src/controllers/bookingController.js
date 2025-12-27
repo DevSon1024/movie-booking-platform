@@ -5,17 +5,16 @@ import Show from '../models/Show.js';
 // @route   POST /api/bookings
 // @access  Private
 const createBooking = async (req, res) => {
-  const { showId, selectedSeats } = req.body; // selectedSeats = ["A1", "A2"]
+  const { showId, selectedSeats } = req.body; 
 
-  // 1. Find the Show
-  const show = await Show.findById(showId).populate('movie');
+  // 1. Find the Show (Do NOT populate movie here, we need the ID)
+  const show = await Show.findById(showId);
   if (!show) {
     res.status(404);
     throw new Error('Show not found');
   }
 
   // 2. Validate Seat Availability
-  // We check if ANY of the requested seats are already booked in the DB
   const isSeatTaken = show.seats.some(seat => 
     selectedSeats.includes(`${seat.row}${seat.number}`) && seat.isBooked
   );
@@ -25,32 +24,56 @@ const createBooking = async (req, res) => {
     throw new Error('One or more selected seats are already booked');
   }
 
-  // 3. Mark Seats as Booked in Show Document
-  let totalPrice = 0;
-  
-  // Iterate through the show's seat array and update matching seats
-  show.seats = show.seats.map(seat => {
-    const seatLabel = `${seat.row}${seat.number}`;
-    if (selectedSeats.includes(seatLabel)) {
-      totalPrice += seat.price;
-      return { ...seat, isBooked: true, userId: req.user._id };
-    }
-    return seat;
-  });
+  // 3. Calculate Price (Use SHOW PRICE, not seat price)
+  const pricePerSeat = show.price;
+  if (!pricePerSeat) {
+    res.status(500);
+    throw new Error('Price configuration missing for this show');
+  }
+  const totalPrice = pricePerSeat * selectedSeats.length;
 
-  await show.save();
+  try {
+    // 4. Mark Seats as Booked
+    show.seats.forEach(seat => {
+      const seatLabel = `${seat.row}${seat.number}`;
+      if (selectedSeats.includes(seatLabel)) {
+        seat.isBooked = true;
+        seat.userId = req.user._id;
+      }
+    });
 
-  // 4. Create Booking Record
-  const booking = new Booking({
-    user: req.user._id,
-    show: showId,
-    movie: show.movie._id,
-    seats: selectedSeats,
-    totalPrice: totalPrice,
-  });
+    await show.save();
 
-  const createdBooking = await booking.save();
-  res.status(201).json(createdBooking);
+    // 5. Create Booking
+    const booking = new Booking({
+      user: req.user._id,
+      show: showId,
+      movie: show.movie, // Use ID from the show document
+      seats: selectedSeats,
+      totalPrice: totalPrice,
+    });
+
+    const createdBooking = await booking.save();
+    res.status(201).json(createdBooking);
+
+  } catch (error) {
+    // Rollback: Unbook seats if booking creation fails
+    console.error("Booking Error:", error);
+    try {
+        const freshShow = await Show.findById(showId);
+        freshShow.seats.forEach(seat => {
+            const seatLabel = `${seat.row}${seat.number}`;
+            if (selectedSeats.includes(seatLabel) && seat.userId?.toString() === req.user._id.toString()) {
+                seat.isBooked = false;
+                seat.userId = null;
+            }
+        });
+        await freshShow.save();
+    } catch (rbError) { console.error("Rollback failed", rbError); }
+
+    res.status(500);
+    throw new Error('Booking failed. Please try again.');
+  }
 };
 
 // @desc    Get logged in user's bookings
@@ -59,8 +82,11 @@ const createBooking = async (req, res) => {
 const getMyBookings = async (req, res) => {
   const bookings = await Booking.find({ user: req.user._id })
     .populate('movie', 'title posterUrl')
-    .populate('show', 'startTime theatre screenName')
-    .sort({ createdAt: -1 }); // Newest first
+    .populate({
+        path: 'show',
+        populate: { path: 'theatre', select: 'name' } 
+    })
+    .sort({ createdAt: -1 });
     
   res.json(bookings);
 };
