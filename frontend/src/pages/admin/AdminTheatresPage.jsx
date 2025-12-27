@@ -15,7 +15,7 @@ const AdminTheatresPage = () => {
     name: '',
     city: '',
     address: '',
-    facilities: '', // Comma separated string for input
+    facilities: '',
     screens: [
       { name: 'Screen 1', type: 'Standard', seatLayout: { rows: 10, cols: 10 } }
     ]
@@ -38,13 +38,10 @@ const AdminTheatresPage = () => {
     }
   };
 
-  // --- Form Handlers ---
-
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Handle Screen Changes (Nested Array)
   const handleScreenChange = (index, field, value) => {
     const newScreens = [...formData.screens];
     if (field === 'rows' || field === 'cols') {
@@ -71,11 +68,9 @@ const AdminTheatresPage = () => {
     }
   };
 
-  // --- Submit Handler ---
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Convert facilities string to array
       const payload = {
         ...formData,
         facilities: formData.facilities.split(',').map(f => f.trim()).filter(f => f !== '')
@@ -129,122 +124,285 @@ const AdminTheatresPage = () => {
     setShowForm(false);
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-gray-400 dark:text-gray-500">Loading theatres...</div>
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Manage Theatres</h1>
+    <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-200">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Manage Theatres
+          </h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            Add, edit, and manage theatre locations
+          </p>
+        </div>
         <button 
           onClick={() => { resetForm(); setShowForm(!showForm); }} 
-          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded flex items-center"
+          className="bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 transition-all duration-200 shadow-md hover:shadow-lg"
         >
-          {showForm ? 'Close' : <><FaPlus className="mr-2" /> Add Theatre</>}
+          {showForm ? (
+            <span>Close Form</span>
+          ) : (
+            <>
+              <FaPlus className="text-sm" />
+              <span>Add Theatre</span>
+            </>
+          )}
         </button>
       </div>
 
+      {/* Form Section */}
       {showForm && (
-        <div className="bg-gray-800 p-6 rounded-lg mb-8 border border-gray-700 animate-fade-in">
-          <h2 className="text-xl font-bold mb-4 text-blue-400">{isEditing ? 'Edit Theatre' : 'Add New Theatre'}</h2>
+        <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-xl mb-8 border border-gray-200 dark:border-gray-700 shadow-lg animate-fade-in">
+          <h2 className="text-xl font-bold mb-6 text-blue-600 dark:text-blue-400 flex items-center gap-2">
+            <FaVideo className="text-lg" />
+            {isEditing ? 'Edit Theatre' : 'Add New Theatre'}
+          </h2>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Basic Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input name="name" placeholder="Theatre Name" value={formData.name} onChange={handleChange} className="bg-gray-700 p-3 rounded text-white" required />
-              <input name="city" placeholder="City" value={formData.city} onChange={handleChange} className="bg-gray-700 p-3 rounded text-white" required />
-              <input name="address" placeholder="Full Address" value={formData.address} onChange={handleChange} className="bg-gray-700 p-3 rounded text-white md:col-span-2" required />
-              <input name="facilities" placeholder="Facilities (e.g., Parking, Dolby Atmos) - Comma separated" value={formData.facilities} onChange={handleChange} className="bg-gray-700 p-3 rounded text-white md:col-span-2" />
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block">
+                  Theatre Name *
+                </label>
+                <input 
+                  name="name" 
+                  placeholder="e.g., Cineplex Downtown" 
+                  value={formData.name} 
+                  onChange={handleChange} 
+                  className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 p-3 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent outline-none transition-all" 
+                  required 
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block">
+                  City *
+                </label>
+                <input 
+                  name="city" 
+                  placeholder="e.g., Mumbai" 
+                  value={formData.city} 
+                  onChange={handleChange} 
+                  className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 p-3 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent outline-none transition-all" 
+                  required 
+                />
+              </div>
+              
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block">
+                  Full Address *
+                </label>
+                <input 
+                  name="address" 
+                  placeholder="e.g., 123 Main Street, Downtown" 
+                  value={formData.address} 
+                  onChange={handleChange} 
+                  className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 p-3 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent outline-none transition-all" 
+                  required 
+                />
+              </div>
+              
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block">
+                  Facilities
+                </label>
+                <input 
+                  name="facilities" 
+                  placeholder="Parking, Dolby Atmos, Cafe (comma separated)" 
+                  value={formData.facilities} 
+                  onChange={handleChange} 
+                  className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 p-3 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent outline-none transition-all" 
+                />
+              </div>
             </div>
 
             {/* Screens Section */}
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-gray-400">Screens Configuration</label>
-                <button type="button" onClick={addScreen} className="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded">+ Add Screen</button>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Screens Configuration *
+                </label>
+                <button 
+                  type="button" 
+                  onClick={addScreen} 
+                  className="text-sm bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg transition-all flex items-center gap-1"
+                >
+                  <FaPlus className="text-xs" /> Add Screen
+                </button>
               </div>
               
               <div className="space-y-3">
                 {formData.screens.map((screen, index) => (
-                  <div key={index} className="flex flex-col md:flex-row gap-3 bg-gray-700/50 p-3 rounded border border-gray-600">
-                    <input 
-                      placeholder="Screen Name" 
-                      value={screen.name} 
-                      onChange={(e) => handleScreenChange(index, 'name', e.target.value)}
-                      className="bg-gray-700 p-2 rounded text-white flex-1"
-                      required
-                    />
-                    <select 
-                      value={screen.type}
-                      onChange={(e) => handleScreenChange(index, 'type', e.target.value)}
-                      className="bg-gray-700 p-2 rounded text-white w-32"
-                    >
-                      <option value="Standard">Standard</option>
-                      <option value="IMAX">IMAX</option>
-                      <option value="3D">3D</option>
-                      <option value="4DX">4DX</option>
-                    </select>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400">Rows:</span>
+                  <div 
+                    key={index} 
+                    className="flex flex-col md:flex-row gap-3 bg-white dark:bg-gray-700/50 p-4 rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm"
+                  >
+                    <div className="flex-1 space-y-2">
+                      <label className="text-xs text-gray-600 dark:text-gray-400">Screen Name</label>
                       <input 
-                        type="number" 
-                        value={screen.seatLayout.rows}
-                        onChange={(e) => handleScreenChange(index, 'rows', e.target.value)}
-                        className="bg-gray-700 p-2 rounded text-white w-16"
+                        placeholder="Screen Name" 
+                        value={screen.name} 
+                        onChange={(e) => handleScreenChange(index, 'name', e.target.value)}
+                        className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 p-2.5 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 outline-none transition-all text-sm"
                         required
-                        min="1"
                       />
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400">Cols:</span>
-                      <input 
-                        type="number" 
-                        value={screen.seatLayout.cols}
-                        onChange={(e) => handleScreenChange(index, 'cols', e.target.value)}
-                        className="bg-gray-700 p-2 rounded text-white w-16"
-                        required
-                        min="1"
-                      />
+                    
+                    <div className="w-full md:w-36 space-y-2">
+                      <label className="text-xs text-gray-600 dark:text-gray-400">Type</label>
+                      <select 
+                        value={screen.type}
+                        onChange={(e) => handleScreenChange(index, 'type', e.target.value)}
+                        className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 p-2.5 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 outline-none transition-all text-sm"
+                      >
+                        <option value="Standard">Standard</option>
+                        <option value="IMAX">IMAX</option>
+                        <option value="3D">3D</option>
+                        <option value="4DX">4DX</option>
+                      </select>
                     </div>
-                    <button type="button" onClick={() => removeScreen(index)} className="text-red-400 hover:text-red-300 px-2"><FaTrash /></button>
+                    
+                    <div className="flex items-end gap-3">
+                      <div className="space-y-2">
+                        <label className="text-xs text-gray-600 dark:text-gray-400">Rows</label>
+                        <input 
+                          type="number" 
+                          value={screen.seatLayout.rows}
+                          onChange={(e) => handleScreenChange(index, 'rows', e.target.value)}
+                          className="w-20 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 p-2.5 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 outline-none transition-all text-sm"
+                          required
+                          min="1"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="text-xs text-gray-600 dark:text-gray-400">Cols</label>
+                        <input 
+                          type="number" 
+                          value={screen.seatLayout.cols}
+                          onChange={(e) => handleScreenChange(index, 'cols', e.target.value)}
+                          className="w-20 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 p-2.5 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 outline-none transition-all text-sm"
+                          required
+                          min="1"
+                        />
+                      </div>
+                      
+                      <button 
+                        type="button" 
+                        onClick={() => removeScreen(index)} 
+                        className="p-2.5 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
+                        title="Remove screen"
+                      >
+                        <FaTrash />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <button type="submit" className="bg-green-600 hover:bg-green-700 w-full py-3 rounded font-bold">
+            {/* Submit Button */}
+            <button 
+              type="submit" 
+              className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 dark:from-green-500 dark:to-green-600 dark:hover:from-green-600 dark:hover:to-green-700 w-full py-3 rounded-lg font-bold text-white transition-all duration-200 shadow-md hover:shadow-lg"
+            >
               {isEditing ? 'Update Theatre' : 'Save Theatre'}
             </button>
           </form>
         </div>
       )}
 
-      {/* Theatre List */}
+      {/* Theatre Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {theatres.map(theatre => (
-          <div key={theatre._id} className="bg-gray-800 p-6 rounded-lg shadow-lg border-l-4 border-red-500">
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="text-xl font-bold">{theatre.name}</h3>
-              <div className="flex space-x-2">
-                <button onClick={() => handleEdit(theatre)} className="text-blue-400 hover:text-blue-300"><FaEdit /></button>
-                <button onClick={() => handleDelete(theatre._id)} className="text-red-400 hover:text-red-300"><FaTrash /></button>
-              </div>
-            </div>
-            <p className="text-gray-400 flex items-center text-sm mb-4"><FaMapMarkerAlt className="mr-2"/> {theatre.city} - {theatre.address}</p>
-            
-            <div className="space-y-1">
-              <p className="text-sm font-semibold text-gray-300">Screens:</p>
-              {theatre.screens.map((s, i) => (
-                <div key={i} className="text-xs text-gray-400 flex justify-between">
-                   <span>{s.name} ({s.type})</span>
-                   <span>{s.capacity} Seats</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-4 pt-3 border-t border-gray-700 flex flex-wrap gap-2">
-               {theatre.facilities.map((f, i) => (
-                 <span key={i} className="text-xs bg-gray-700 px-2 py-1 rounded text-gray-300">{f}</span>
-               ))}
-            </div>
+        {theatres.length === 0 ? (
+          <div className="col-span-full text-center py-12 text-gray-500 dark:text-gray-400">
+            No theatres added yet. Click "Add Theatre" to create one.
           </div>
-        ))}
+        ) : (
+          theatres.map(theatre => (
+            <div 
+              key={theatre._id} 
+              className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-l-4 border-red-500 dark:border-red-400 hover:shadow-xl transition-all duration-200"
+            >
+              {/* Theatre Header */}
+              <div className="flex justify-between items-start mb-3">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                  {theatre.name}
+                </h3>
+                <div className="flex space-x-2">
+                  <button 
+                    onClick={() => handleEdit(theatre)} 
+                    className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 p-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
+                    title="Edit theatre"
+                  >
+                    <FaEdit className="text-lg" />
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(theatre._id)} 
+                    className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                    title="Delete theatre"
+                  >
+                    <FaTrash className="text-lg" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Location */}
+              <p className="text-gray-600 dark:text-gray-400 flex items-start gap-2 text-sm mb-4">
+                <FaMapMarkerAlt className="mt-0.5 flex-shrink-0" /> 
+                <span>{theatre.city} - {theatre.address}</span>
+              </p>
+              
+              {/* Screens Info */}
+              <div className="space-y-2 mb-4">
+                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                  <FaVideo className="text-gray-500 dark:text-gray-400" />
+                  Screens ({theatre.screens.length})
+                </p>
+                <div className="space-y-1.5">
+                  {theatre.screens.map((s, i) => (
+                    <div 
+                      key={i} 
+                      className="text-xs bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg flex justify-between items-center"
+                    >
+                      <span className="text-gray-700 dark:text-gray-300 font-medium">
+                        {s.name} <span className="text-gray-500 dark:text-gray-400">({s.type})</span>
+                      </span>
+                      <span className="text-gray-600 dark:text-gray-400">
+                        {s.capacity} Seats
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Facilities */}
+              {theatre.facilities && theatre.facilities.length > 0 && (
+                <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex flex-wrap gap-2">
+                    {theatre.facilities.map((f, i) => (
+                      <span 
+                        key={i} 
+                        className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-full font-medium"
+                      >
+                        {f}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
