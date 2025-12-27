@@ -3,13 +3,27 @@ import { useSelector } from 'react-redux';
 import api from '../services/api';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
-import { FaStar, FaTicketAlt, FaCalendarAlt, FaClock, FaMapMarkerAlt, FaRegStar, FaTheaterMasks } from 'react-icons/fa';
+import { QRCodeSVG } from 'qrcode.react';
+import { 
+  FaTicketAlt, 
+  FaCalendarAlt, 
+  FaClock, 
+  FaMapMarkerAlt, 
+  FaTheaterMasks,
+  FaQrcode,
+  FaTimes,
+  FaCheckCircle,
+  FaTimesCircle
+} from 'react-icons/fa';
 
 const ProfilePage = () => {
   const { userInfo } = useSelector((state) => state.auth);
+  const { currencySymbol } = useSelector((state) => state.settings);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all'); // all, upcoming, past
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [showQRModal, setShowQRModal] = useState(false);
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -38,12 +52,17 @@ const ProfilePage = () => {
 
   const filteredBookings = filterBookings();
 
+  const handleShowQR = (booking) => {
+    setSelectedBooking(booking);
+    setShowQRModal(true);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-gray-500 dark:text-gray-400 text-center animate-pulse">
-          <div className="w-12 h-12 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-4"></div>
-          Loading Your Tickets...
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-red-600 dark:border-red-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading Your Tickets...</p>
         </div>
       </div>
     );
@@ -51,7 +70,7 @@ const ProfilePage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200 py-8">
-      <div className="max-w-5xl mx-auto px-4">
+      <div className="max-w-6xl mx-auto px-4">
         
         {/* Header */}
         <div className="mb-8">
@@ -101,31 +120,45 @@ const ProfilePage = () => {
         ) : (
           <div className="grid gap-6">
             {filteredBookings.map((booking) => (
-              <TicketCard key={booking._id} booking={booking} />
+              <TicketCard 
+                key={booking._id} 
+                booking={booking} 
+                currencySymbol={currencySymbol}
+                onShowQR={handleShowQR}
+              />
             ))}
           </div>
         )}
       </div>
+
+      {/* QR Code Modal */}
+      {showQRModal && selectedBooking && (
+        <QRModal 
+          booking={selectedBooking} 
+          onClose={() => setShowQRModal(false)} 
+        />
+      )}
     </div>
   );
 };
 
 // Ticket Card Component
-const TicketCard = ({ booking }) => {
-  const [reviewOpen, setReviewOpen] = useState(false);
-  const [rating, setRating] = useState(5);
-  const [comment, setComment] = useState("");
-
+const TicketCard = ({ booking, currencySymbol, onShowQR }) => {
   if (!booking.show || !booking.movie) {
     return (
       <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border-2 border-red-300 dark:border-red-900 shadow-md">
-         <div className="flex items-center justify-between">
-           <div>
-               <h3 className="text-red-600 dark:text-red-400 font-bold mb-1">⚠️ Booking Data Unavailable</h3>
-               <p className="text-gray-600 dark:text-gray-400 text-sm">
+         <div className="flex items-start justify-between">
+           <div className="flex-1">
+               <div className="flex items-center gap-2 mb-2">
+                 <FaTimesCircle className="text-red-600 dark:text-red-400 text-xl" />
+                 <h3 className="text-red-600 dark:text-red-400 font-bold text-lg">
+                   Booking Data Unavailable
+                 </h3>
+               </div>
+               <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">
                   The show or movie for this booking is no longer available.
                </p>
-               <p className="text-xs text-gray-500 dark:text-gray-500 font-mono mt-2">
+               <p className="text-xs text-gray-500 dark:text-gray-500 font-mono">
                  Booking ID: {booking._id}
                </p>
            </div>
@@ -139,30 +172,15 @@ const TicketCard = ({ booking }) => {
 
   const showTime = new Date(booking.show.startTime);
   const now = new Date();
-  const isPast = now > new Date(showTime.getTime() + 120 * 60000);
   const isUpcoming = showTime > now;
-
-  const handleReviewSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await api.post('/reviews', {
-        movieId: booking.movie._id,
-        rating,
-        comment
-      });
-      toast.success("Review Submitted! Thank you for your feedback.");
-      setReviewOpen(false);
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to submit review");
-    }
-  };
+  const isPast = showTime < now;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-shadow">
+    <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all">
       <div className="flex flex-col md:flex-row">
         
         {/* Movie Poster */}
-        <div className="md:w-40 h-48 md:h-auto bg-gray-200 dark:bg-gray-700 flex-shrink-0">
+        <div className="md:w-40 h-56 md:h-auto bg-gray-200 dark:bg-gray-700 flex-shrink-0">
           <img 
             src={booking.movie.posterUrl} 
             alt={booking.movie.title} 
@@ -171,137 +189,204 @@ const TicketCard = ({ booking }) => {
         </div>
 
         {/* Ticket Details */}
-        <div className="p-6 flex-grow">
+        <div className="flex-1 p-6">
           
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start mb-4">
-            <div>
-              <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
+            <div className="mb-3 sm:mb-0">
+              <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-2">
                 {booking.movie.title}
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 text-sm flex items-center gap-2">
-                <FaMapMarkerAlt className="text-gray-400" />
-                {booking.show.theatre?.name || 'Unknown Theatre'} | {booking.show.screenName}
+              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 text-sm">
+                <FaMapMarkerAlt className="text-red-500" />
+                <span className="font-medium">{booking.show.theatre?.name}</span>
+              </div>
+            </div>
+            
+            {/* Status Badge */}
+            <div className="flex items-center gap-2">
+              <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase ${
+                booking.paymentStatus === 'confirmed' 
+                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                  : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
+              }`}>
+                <FaCheckCircle className="inline mr-1" />
+                {booking.paymentStatus}
+              </span>
+              {isUpcoming && (
+                <span className="px-4 py-1.5 rounded-full text-xs font-bold uppercase bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                  Upcoming
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Booking Info Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+            {/* Date & Time */}
+            <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+              <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-xs mb-2">
+                <FaCalendarAlt />
+                <span className="uppercase tracking-wide font-medium">Date & Time</span>
+              </div>
+              <p className="text-gray-900 dark:text-white font-bold">
+                {format(showTime, 'MMM dd, yyyy')}
+              </p>
+              <p className="text-gray-700 dark:text-gray-300 text-sm">
+                {format(showTime, 'h:mm a')}
               </p>
             </div>
-            <div className="mt-2 sm:mt-0">
-               <span className={`px-3 py-1.5 text-xs font-bold rounded-full ${
-                 booking.paymentStatus === 'CONFIRMED' 
-                   ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800' 
-                   : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
-               }`}>
-                 {booking.paymentStatus}
-               </span>
-               {isUpcoming && (
-                 <span className="ml-2 px-3 py-1.5 text-xs font-bold rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                   Upcoming
-                 </span>
-               )}
+
+            {/* Theatre Info */}
+            <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+              <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-xs mb-2">
+                <FaTheaterMasks />
+                <span className="uppercase tracking-wide font-medium">Theatre</span>
+              </div>
+              <p className="text-gray-900 dark:text-white font-bold truncate">
+                {booking.show.theatre?.name}
+              </p>
+              <p className="text-gray-700 dark:text-gray-300 text-sm">
+                {booking.show.screenName}
+              </p>
+            </div>
+
+            {/* Seats */}
+            <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+              <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-xs mb-2">
+                <FaTicketAlt />
+                <span className="uppercase tracking-wide font-medium">Seats</span>
+              </div>
+              <p className="text-gray-900 dark:text-white font-bold">
+                {booking.seats.join(', ')}
+              </p>
+              <p className="text-gray-700 dark:text-gray-300 text-sm">
+                {booking.seats.length} {booking.seats.length === 1 ? 'Seat' : 'Seats'}
+              </p>
             </div>
           </div>
 
-          {/* Show Details Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5 pb-5 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-start gap-3">
-              <FaCalendarAlt className="text-gray-400 dark:text-gray-500 mt-0.5" />
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Date & Time</p>
-                <p className="font-semibold text-gray-900 dark:text-white">
-                  {format(showTime, 'PPp')}
-                </p>
-              </div>
+          {/* Footer */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div>
+              <p className="text-gray-500 dark:text-gray-400 text-xs mb-1">Total Amount</p>
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                {currencySymbol}{booking.totalPrice}
+              </p>
             </div>
-            <div className="flex items-start gap-3">
-              <FaTicketAlt className="text-gray-400 dark:text-gray-500 mt-0.5" />
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Seats</p>
-                <p className="font-semibold text-gray-900 dark:text-white break-words">
-                  {booking.seats.join(', ')}
-                </p>
-              </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => onShowQR(booking)}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-2.5 rounded-lg font-bold transition-all flex items-center gap-2 shadow-md hover:shadow-lg"
+              >
+                <FaQrcode />
+                Show QR Code
+              </button>
             </div>
           </div>
 
-          {/* Review Section */}
-          <div>
-            {!isPast ? (
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                <p className="text-yellow-800 dark:text-yellow-400 text-sm flex items-center gap-2">
-                  <FaClock className="text-yellow-600 dark:text-yellow-500" />
-                  Enjoy the show! Review option will be available after the movie ends.
-                </p>
-              </div>
-            ) : (
-              <div>
-                {!reviewOpen ? (
-                  <button 
-                    onClick={() => setReviewOpen(true)}
-                    className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm font-semibold flex items-center gap-2 transition-colors"
-                  >
-                    <FaStar /> Write a Verified Review
-                  </button>
-                ) : (
-                  <form onSubmit={handleReviewSubmit} className="bg-gray-50 dark:bg-gray-700 p-5 rounded-lg border border-gray-200 dark:border-gray-600 animate-fade-in">
-                    {/* Rating */}
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Your Rating
-                      </label>
-                      <div className="flex gap-2">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <button
-                            key={star}
-                            type="button"
-                            onClick={() => setRating(star)}
-                            className={`text-2xl transition-all hover:scale-110 ${
-                              star <= rating ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'
-                            }`}
-                          >
-                            {star <= rating ? <FaStar /> : <FaRegStar />}
-                          </button>
-                        ))}
-                        <span className="ml-2 text-gray-600 dark:text-gray-400 font-medium">
-                          {rating}/5
-                        </span>
-                      </div>
-                    </div>
-                    
-                    {/* Comment */}
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Your Review
-                      </label>
-                      <textarea 
-                        className="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm p-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 outline-none transition-all resize-none"
-                        rows="3"
-                        placeholder="Share your thoughts about this movie..."
-                        value={comment}
-                        onChange={(e) => setComment(e.target.value)}
-                        required
-                      ></textarea>
-                    </div>
-                    
-                    {/* Actions */}
-                    <div className="flex justify-end gap-3">
-                      <button 
-                        type="button" 
-                        onClick={() => setReviewOpen(false)}
-                        className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-sm font-medium transition-colors"
-                      >
-                        Cancel
-                      </button>
-                      <button 
-                        type="submit"
-                        className="bg-red-600 dark:bg-red-500 hover:bg-red-700 dark:hover:bg-red-600 text-white px-6 py-2 rounded-lg text-sm font-bold transition-all shadow-md hover:shadow-lg"
-                      >
-                        Submit Review
-                      </button>
-                    </div>
-                  </form>
-                )}
-              </div>
-            )}
+          {/* Booking ID */}
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Booking ID: <span className="font-mono font-semibold text-gray-700 dark:text-gray-300">{booking._id}</span>
+            </p>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// QR Code Modal Component
+const QRModal = ({ booking, onClose }) => {
+  const qrData = JSON.stringify({
+    bookingId: booking._id,
+    movieTitle: booking.movie.title,
+    theatre: booking.show.theatre?.name,
+    screen: booking.show.screenName,
+    showTime: booking.show.startTime,
+    seats: booking.seats,
+    totalPrice: booking.totalPrice
+  });
+
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full shadow-2xl animate-fade-in">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <FaQrcode className="text-purple-600" />
+            Your Ticket
+          </h3>
+          <button 
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+          >
+            <FaTimes className="text-xl" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-8 text-center">
+          {/* QR Code */}
+          <div className="bg-white p-6 rounded-xl inline-block mb-6 shadow-lg">
+            <QRCodeSVG 
+              value={qrData} 
+              size={200}
+              level="H"
+              includeMargin={true}
+            />
+          </div>
+
+          {/* Movie Info */}
+          <div className="mb-6">
+            <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+              {booking.movie.title}
+            </h4>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">
+              {booking.show.theatre?.name} - {booking.show.screenName}
+            </p>
+            <p className="text-gray-700 dark:text-gray-300 font-medium">
+              {format(new Date(booking.show.startTime), 'MMM dd, yyyy • h:mm a')}
+            </p>
+          </div>
+
+          {/* Seats */}
+          <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 p-4 rounded-lg mb-4">
+            <p className="text-gray-600 dark:text-gray-400 text-xs mb-2 uppercase tracking-wide font-medium">
+              Seats
+            </p>
+            <p className="text-gray-900 dark:text-white font-bold text-lg">
+              {booking.seats.join(', ')}
+            </p>
+          </div>
+
+          {/* Booking ID */}
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mb-6">
+            ID: {booking._id}
+          </p>
+
+          {/* Instructions */}
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+            <p className="text-yellow-800 dark:text-yellow-300 text-sm">
+              <strong>📱 Show this QR code at the theatre entrance</strong>
+            </p>
+            <p className="text-yellow-700 dark:text-yellow-400 text-xs mt-1">
+              Please arrive 15 minutes before showtime
+            </p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-6 border-t border-gray-200 dark:border-gray-700">
+          <button
+            onClick={onClose}
+            className="w-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-bold py-3 rounded-lg transition-all"
+          >
+            Close
+          </button>
         </div>
       </div>
     </div>

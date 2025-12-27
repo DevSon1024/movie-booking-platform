@@ -3,7 +3,21 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import api from "../services/api";
 import toast from "react-hot-toast";
-import { FaCreditCard, FaArrowLeft, FaCheckCircle, FaTimes, FaExclamationTriangle } from "react-icons/fa";
+import { QRCodeSVG } from 'qrcode.react';
+import { format } from 'date-fns';
+import { 
+  FaCreditCard, 
+  FaArrowLeft, 
+  FaCheckCircle, 
+  FaTimes, 
+  FaExclamationTriangle,
+  FaTicketAlt,
+  FaQrcode,
+  FaCalendarAlt,
+  FaClock,
+  FaMapMarkerAlt,
+  FaTheaterMasks
+} from "react-icons/fa";
 
 const BookingPage = () => {
   const { id } = useParams();
@@ -14,6 +28,8 @@ const BookingPage = () => {
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [processing, setProcessing] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [bookingData, setBookingData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -41,8 +57,8 @@ const BookingPage = () => {
     if (selectedSeats.includes(seatLabel)) {
       setSelectedSeats(selectedSeats.filter((s) => s !== seatLabel));
     } else {
-      if (selectedSeats.length >= 6) {
-        toast.error("You can select max 6 seats");
+      if (selectedSeats.length >= 10) {
+        toast.error("You can select maximum 10 seats");
         return;
       }
       setSelectedSeats([...selectedSeats, seatLabel]);
@@ -50,31 +66,47 @@ const BookingPage = () => {
   };
 
   const handleCheckout = () => {
-    if (selectedSeats.length === 0) return;
+    if (selectedSeats.length === 0) {
+      toast.error("Please select at least one seat");
+      return;
+    }
     setShowPaymentModal(true);
   };
 
   const processPaymentAndBook = async () => {
     setProcessing(true);
+    
+    // Simulate payment processing
     setTimeout(async () => {
       try {
-        await api.post("/bookings", { showId: id, selectedSeats });
-        toast.success("Booking Confirmed!");
-        navigate("/profile");
-      } catch (error) {
-        toast.error(error.response?.data?.message || "Booking failed");
-        setProcessing(false);
+        const { data } = await api.post("/bookings", { 
+          showId: id, 
+          selectedSeats 
+        });
+        
+        setBookingData(data);
         setShowPaymentModal(false);
+        setShowSuccessModal(true);
+        toast.success("🎉 Booking Confirmed!");
+        
+      } catch (error) {
+        toast.error(error.response?.data?.message || "Booking failed. Please try again.");
+        setProcessing(false);
       }
-    }, 1500);
+    }, 2000);
+  };
+
+  const handleCloseSuccess = () => {
+    setShowSuccessModal(false);
+    navigate("/profile");
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-gray-500 dark:text-gray-400 text-center animate-pulse">
-          <div className="w-12 h-12 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-4"></div>
-          Loading Cinema Hall...
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-red-600 dark:border-red-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading Cinema Hall...</p>
         </div>
       </div>
     );
@@ -82,12 +114,12 @@ const BookingPage = () => {
 
   if (!show) {
     return (
-      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl text-red-600 dark:text-red-400 mb-4">Show Not Found</h2>
+          <h2 className="text-2xl text-red-600 dark:text-red-400 mb-4 font-bold">Show Not Found</h2>
           <button
             onClick={() => navigate(-1)}
-            className="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white px-4 py-2 rounded-lg transition-colors"
+            className="bg-red-600 dark:bg-red-500 hover:bg-red-700 dark:hover:bg-red-600 text-white px-6 py-3 rounded-lg font-bold transition-all"
           >
             Go Back
           </button>
@@ -96,10 +128,10 @@ const BookingPage = () => {
     );
   }
 
-  // ✅ CHECK IF SHOW IS CANCELLED
+  // Check if show is cancelled
   if (show.status === 'cancelled') {
     return (
-      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4">
         <div className="max-w-md w-full bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-800 rounded-xl p-8 text-center">
           <FaExclamationTriangle className="text-6xl text-red-600 dark:text-red-400 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-red-700 dark:text-red-300 mb-3">
@@ -109,9 +141,10 @@ const BookingPage = () => {
             This show has been cancelled by the theatre.
           </p>
           {show.cancelReason && (
-            <p className="text-sm text-gray-600 dark:text-gray-400 italic mb-6">
-              Reason: {show.cancelReason}
-            </p>
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-6">
+              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Reason:</p>
+              <p className="text-gray-800 dark:text-gray-200 italic">{show.cancelReason}</p>
+            </div>
           )}
           <div className="space-y-3">
             <button
@@ -140,60 +173,86 @@ const BookingPage = () => {
       }, {})
     : {};
 
-  const pricePerSeat = show.price || 0;
   const totalPrice = selectedSeats.length * (show.price || 0);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-200">
       <div className="container mx-auto px-4 py-6 max-w-5xl pb-32">
+        
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8 pb-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 mb-8 shadow-md border border-gray-200 dark:border-gray-700">
           <button
             onClick={() => navigate(-1)}
-            className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
+            className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4 inline-flex items-center gap-2 transition-colors"
           >
-            <FaArrowLeft className="text-lg" />
+            <FaArrowLeft /> Back
           </button>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{show.movie?.title}</h2>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
-              {show.theatre?.name} | {show.screenName}
-            </p>
+          
+          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                {show.movie?.title}
+              </h2>
+              <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
+                <span className="flex items-center gap-1">
+                  <FaMapMarkerAlt className="text-red-500" />
+                  {show.theatre?.name}
+                </span>
+                <span className="flex items-center gap-1">
+                  <FaTheaterMasks className="text-blue-500" />
+                  {show.screenName}
+                </span>
+                <span className="flex items-center gap-1">
+                  <FaCalendarAlt className="text-green-500" />
+                  {format(new Date(show.startTime), 'MMM dd, yyyy')}
+                </span>
+                <span className="flex items-center gap-1">
+                  <FaClock className="text-purple-500" />
+                  {format(new Date(show.startTime), 'h:mm a')}
+                </span>
+              </div>
+            </div>
+            <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 px-6 py-3 rounded-lg border border-green-200 dark:border-green-800">
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Price per seat</p>
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                {currencySymbol}{show.price}
+              </p>
+            </div>
           </div>
         </div>
 
         {/* Screen Visual */}
         <div className="w-full max-w-3xl mx-auto mb-12">
           <div className="h-3 bg-gradient-to-b from-gray-400 dark:from-gray-600 to-transparent rounded-[50%] shadow-[0_-5px_15px_rgba(0,0,0,0.2)] dark:shadow-[0_-5px_15px_rgba(255,255,255,0.1)]"></div>
-          <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-3 font-semibold tracking-[0.3em]">
-            SCREEN
+          <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-3 font-bold tracking-[0.3em]">
+            SCREEN THIS WAY
           </p>
         </div>
 
         {/* Legend */}
-        <div className="flex justify-center gap-6 mb-8 text-sm">
+        <div className="flex justify-center gap-6 mb-8 text-sm flex-wrap">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-gray-200 dark:bg-gray-700 rounded-t-lg"></div>
-            <span className="text-gray-600 dark:text-gray-400">Available</span>
+            <div className="w-7 h-7 bg-gray-200 dark:bg-gray-700 rounded-t-lg border border-gray-300 dark:border-gray-600"></div>
+            <span className="text-gray-600 dark:text-gray-400 font-medium">Available</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-green-500 rounded-t-lg"></div>
-            <span className="text-gray-600 dark:text-gray-400">Selected</span>
+            <div className="w-7 h-7 bg-green-500 rounded-t-lg shadow-md"></div>
+            <span className="text-gray-600 dark:text-gray-400 font-medium">Selected</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-gray-400 dark:bg-gray-800 opacity-40 rounded-t-lg"></div>
-            <span className="text-gray-600 dark:text-gray-400">Booked</span>
+            <div className="w-7 h-7 bg-gray-400 dark:bg-gray-800 opacity-40 rounded-t-lg"></div>
+            <span className="text-gray-600 dark:text-gray-400 font-medium">Booked</span>
           </div>
         </div>
 
         {/* Seat Grid */}
-        <div className="w-full overflow-x-auto pb-12 px-4">
+        <div className="w-full overflow-x-auto pb-12 px-2">
           <div className="flex flex-col gap-3 items-center min-w-max mx-auto">
             {Object.keys(seatsByRow)
               .sort()
               .map((rowLabel) => (
                 <div key={rowLabel} className="flex gap-2 items-center">
-                  <span className="w-8 text-center font-bold text-gray-600 dark:text-gray-400 text-sm">
+                  <span className="w-10 text-center font-bold text-gray-700 dark:text-gray-300 text-sm">
                     {rowLabel}
                   </span>
                   <div className="flex gap-2 md:gap-3">
@@ -204,22 +263,26 @@ const BookingPage = () => {
                         const isSelected = selectedSeats.includes(seatLabel);
 
                         let seatClass =
-                          "bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:scale-110";
-                        if (seat.isBooked)
-                          seatClass = "bg-gray-300 dark:bg-gray-800 text-gray-500 dark:text-gray-600 cursor-not-allowed opacity-40";
-                        if (isSelected)
+                          "bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:scale-110 border border-gray-300 dark:border-gray-600";
+                        
+                        if (seat.isBooked) {
+                          seatClass = "bg-gray-400 dark:bg-gray-800 text-gray-500 dark:text-gray-600 cursor-not-allowed opacity-40 border border-gray-500 dark:border-gray-700";
+                        }
+                        
+                        if (isSelected) {
                           seatClass =
-                            "bg-green-500 dark:bg-green-600 text-white font-bold shadow-lg scale-110";
+                            "bg-green-500 dark:bg-green-600 text-white font-bold shadow-lg scale-110 border-2 border-green-400 dark:border-green-500";
+                        }
 
                         return (
                           <button
                             key={seat._id}
                             onClick={() => handleSeatClick(seat)}
                             disabled={seat.isBooked}
-                            className={`w-8 h-8 md:w-10 md:h-10 rounded-t-xl text-[10px] md:text-xs transition-all duration-200 flex items-center justify-center ${seatClass}`}
+                            className={`w-9 h-9 md:w-11 md:h-11 rounded-t-xl text-[10px] md:text-xs transition-all duration-200 flex items-center justify-center font-semibold ${seatClass}`}
                           >
                             {isSelected ? (
-                              <FaCheckCircle className="text-sm" />
+                              <FaCheckCircle className="text-sm md:text-base" />
                             ) : (
                               !seat.isBooked && seat.number
                             )}
@@ -227,6 +290,9 @@ const BookingPage = () => {
                         );
                       })}
                   </div>
+                  <span className="w-10 text-center font-bold text-gray-700 dark:text-gray-300 text-sm">
+                    {rowLabel}
+                  </span>
                 </div>
               ))}
           </div>
@@ -234,11 +300,12 @@ const BookingPage = () => {
 
         {/* Bottom Action Bar */}
         {selectedSeats.length > 0 && (
-          <div className="fixed bottom-0 left-0 w-full bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4 shadow-2xl z-40 animate-slide-up">
+          <div className="fixed bottom-0 left-0 w-full bg-white dark:bg-gray-800 border-t-2 border-gray-200 dark:border-gray-700 p-4 shadow-2xl z-40 animate-slide-up">
             <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 max-w-4xl">
               <div className="text-center sm:text-left">
                 <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">
-                  {selectedSeats.length} Seat(s) Selected: {selectedSeats.join(", ")}
+                  <FaTicketAlt className="inline mr-1" />
+                  {selectedSeats.length} Seat(s): <span className="font-semibold text-gray-900 dark:text-white">{selectedSeats.join(", ")}</span>
                 </p>
                 <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                   Total:{" "}
@@ -250,8 +317,9 @@ const BookingPage = () => {
               <button
                 onClick={handleCheckout}
                 disabled={processing}
-                className="bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white px-8 py-3 rounded-lg font-bold shadow-lg transition-all hover:scale-105 disabled:opacity-50"
+                className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 dark:from-red-500 dark:to-red-600 dark:hover:from-red-600 dark:hover:to-red-700 text-white px-8 py-4 rounded-xl font-bold shadow-lg transition-all hover:scale-105 disabled:opacity-50 flex items-center gap-2"
               >
+                <FaCreditCard />
                 Proceed to Pay
               </button>
             </div>
@@ -260,32 +328,38 @@ const BookingPage = () => {
 
         {/* Payment Modal */}
         {showPaymentModal && (
-          <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-2xl max-w-md w-full border border-gray-200 dark:border-gray-700 shadow-2xl animate-fade-in">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-2xl max-w-md w-full border border-gray-200 dark:border-gray-700 shadow-2xl">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                  <FaCreditCard className="text-yellow-500" /> Payment
+                  <FaCreditCard className="text-blue-500" /> Payment
                 </h3>
                 {!processing && (
                   <button
                     onClick={() => setShowPaymentModal(false)}
                     className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
                   >
-                    <FaTimes />
+                    <FaTimes className="text-xl" />
                   </button>
                 )}
               </div>
 
-              <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl mb-6 border border-gray-200 dark:border-gray-600">
-                <div className="flex justify-between items-center mb-2">
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-5 rounded-xl mb-6 border border-blue-200 dark:border-blue-800">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-gray-600 dark:text-gray-400 text-sm">Movie:</span>
+                  <span className="text-gray-900 dark:text-white font-bold">
+                    {show.movie?.title}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center mb-3">
                   <span className="text-gray-600 dark:text-gray-400 text-sm">Seats:</span>
-                  <span className="text-gray-900 dark:text-white font-medium text-sm">
+                  <span className="text-gray-900 dark:text-white font-medium">
                     {selectedSeats.join(", ")}
                   </span>
                 </div>
-                <div className="flex justify-between items-center text-lg">
-                  <span className="text-gray-600 dark:text-gray-400">Amount:</span>
-                  <span className="font-bold text-green-600 dark:text-green-400">
+                <div className="flex justify-between items-center text-lg pt-3 border-t border-blue-200 dark:border-blue-800">
+                  <span className="text-gray-700 dark:text-gray-300 font-medium">Total Amount:</span>
+                  <span className="font-bold text-green-600 dark:text-green-400 text-xl">
                     {currencySymbol}{totalPrice}
                   </span>
                 </div>
@@ -299,36 +373,39 @@ const BookingPage = () => {
                 className="space-y-4"
               >
                 <div>
-                  <label className="text-xs text-gray-600 dark:text-gray-400 ml-1 block mb-1.5">
+                  <label className="text-sm text-gray-700 dark:text-gray-300 font-medium ml-1 block mb-2">
                     Card Number
                   </label>
                   <input
                     type="text"
-                    placeholder="0000 0000 0000 0000"
-                    className="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded-lg text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 outline-none transition-all"
+                    placeholder="1234 5678 9012 3456"
+                    maxLength="19"
+                    className="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded-lg text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 outline-none transition-all"
                     required
                   />
                 </div>
                 <div className="flex gap-4">
                   <div className="flex-1">
-                    <label className="text-xs text-gray-600 dark:text-gray-400 ml-1 block mb-1.5">
-                      Expiry
+                    <label className="text-sm text-gray-700 dark:text-gray-300 font-medium ml-1 block mb-2">
+                      Expiry Date
                     </label>
                     <input
                       type="text"
                       placeholder="MM/YY"
-                      className="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded-lg text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 outline-none transition-all"
+                      maxLength="5"
+                      className="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded-lg text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 outline-none transition-all"
                       required
                     />
                   </div>
                   <div className="w-1/3">
-                    <label className="text-xs text-gray-600 dark:text-gray-400 ml-1 block mb-1.5">
+                    <label className="text-sm text-gray-700 dark:text-gray-300 font-medium ml-1 block mb-2">
                       CVV
                     </label>
                     <input
                       type="text"
                       placeholder="123"
-                      className="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded-lg text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 outline-none transition-all"
+                      maxLength="3"
+                      className="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded-lg text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 outline-none transition-all"
                       required
                     />
                   </div>
@@ -337,11 +414,153 @@ const BookingPage = () => {
                 <button
                   type="submit"
                   disabled={processing}
-                  className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 dark:from-green-500 dark:to-green-600 dark:hover:from-green-600 dark:hover:to-green-700 text-white font-bold py-4 rounded-xl mt-4 shadow-lg transition-all disabled:opacity-50"
+                  className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 dark:from-green-500 dark:to-green-600 dark:hover:from-green-600 dark:hover:to-green-700 text-white font-bold py-4 rounded-xl mt-6 shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  {processing ? "Processing Payment..." : `Pay ${currencySymbol}${totalPrice}`}
+                  {processing ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Processing Payment...
+                    </>
+                  ) : (
+                    <>
+                      <FaCheckCircle />
+                      Pay {currencySymbol}{totalPrice}
+                    </>
+                  )}
                 </button>
               </form>
+
+              <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-4">
+                🔒 Your payment is secure and encrypted
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Success Modal with QR Code */}
+        {showSuccessModal && bookingData && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-lg w-full shadow-2xl my-8">
+              
+              {/* Success Header */}
+              <div className="bg-gradient-to-r from-green-500 to-green-600 p-6 rounded-t-2xl text-center">
+                <div className="w-20 h-20 bg-white rounded-full mx-auto mb-4 flex items-center justify-center">
+                  <FaCheckCircle className="text-5xl text-green-500" />
+                </div>
+                <h2 className="text-3xl font-bold text-white mb-2">
+                  Booking Confirmed!
+                </h2>
+                <p className="text-green-100">
+                  Your tickets have been booked successfully
+                </p>
+              </div>
+
+              {/* QR Code Section */}
+              <div className="p-8">
+                <div className="bg-white dark:bg-gray-900 p-6 rounded-xl mb-6 text-center border-2 border-gray-200 dark:border-gray-700">
+                  <QRCodeSVG 
+                    value={JSON.stringify({
+                      bookingId: bookingData._id,
+                      movieTitle: bookingData.movie?.title,
+                      theatre: bookingData.show?.theatre?.name,
+                      screen: bookingData.show?.screenName,
+                      showTime: bookingData.show?.startTime,
+                      seats: bookingData.seats,
+                      totalPrice: bookingData.totalPrice
+                    })} 
+                    size={200}
+                    level="H"
+                    includeMargin={true}
+                    className="mx-auto"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 flex items-center justify-center gap-1">
+                    <FaQrcode /> Scan this QR code at the theatre
+                  </p>
+                </div>
+
+                {/* Booking Details */}
+                <div className="space-y-4 mb-6">
+                  <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Movie</p>
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                      {bookingData.movie?.title}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
+                        <FaCalendarAlt /> Date
+                      </p>
+                      <p className="font-bold text-gray-900 dark:text-white">
+                        {format(new Date(bookingData.show?.startTime), 'MMM dd, yyyy')}
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
+                        <FaClock /> Time
+                      </p>
+                      <p className="font-bold text-gray-900 dark:text-white">
+                        {format(new Date(bookingData.show?.startTime), 'h:mm a')}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
+                      <FaMapMarkerAlt /> Theatre
+                    </p>
+                    <p className="font-bold text-gray-900 dark:text-white">
+                      {bookingData.show?.theatre?.name}
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {bookingData.show?.screenName}
+                    </p>
+                  </div>
+
+                  <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
+                      <FaTicketAlt /> Seats
+                    </p>
+                    <p className="font-bold text-gray-900 dark:text-white text-lg">
+                      {bookingData.seats?.join(', ')}
+                    </p>
+                  </div>
+
+                  <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 p-4 rounded-lg border-2 border-green-200 dark:border-green-800">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Total Amount Paid</p>
+                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      {currencySymbol}{bookingData.totalPrice}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Booking ID */}
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
+                  <p className="text-xs text-yellow-800 dark:text-yellow-300 mb-2 font-medium">
+                    📋 Booking ID
+                  </p>
+                  <p className="text-sm font-mono font-bold text-yellow-900 dark:text-yellow-200 break-all">
+                    {bookingData._id}
+                  </p>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="space-y-3">
+                  <button
+                    onClick={handleCloseSuccess}
+                    className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-4 rounded-xl transition-all shadow-md hover:shadow-lg"
+                  >
+                    View My Tickets
+                  </button>
+                  <button
+                    onClick={() => navigate('/')}
+                    className="w-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-bold py-3 rounded-xl transition-all"
+                  >
+                    Back to Home
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import api from '../services/api';
 import { getShows } from '../services/showService';
@@ -19,6 +19,7 @@ import toast from 'react-hot-toast';
 
 const MoviePage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { currencySymbol } = useSelector((state) => state.settings);
   
   const [movie, setMovie] = useState(null);
@@ -124,6 +125,12 @@ const MoviePage = () => {
     return `${hours}h ${mins}m`;
   };
 
+  // Navigate to booking page
+  const handleShowtimeClick = (showId) => {
+    setShowBookingModal(false);
+    navigate(`/booking/${showId}`);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
@@ -140,12 +147,12 @@ const MoviePage = () => {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl text-red-600 dark:text-red-400 mb-4">Movie Not Found</h2>
-          <Link
-            to="/"
-            className="bg-red-600 dark:bg-red-500 hover:bg-red-700 dark:hover:bg-red-600 text-white px-6 py-3 rounded-lg transition-all inline-block"
+          <button
+            onClick={() => navigate('/')}
+            className="bg-red-600 dark:bg-red-500 hover:bg-red-700 dark:hover:bg-red-600 text-white px-6 py-3 rounded-lg transition-all"
           >
             Back to Home
-          </Link>
+          </button>
         </div>
       </div>
     );
@@ -169,13 +176,13 @@ const MoviePage = () => {
         {/* Content */}
         <div className="relative container mx-auto px-4 py-8">
           {/* Back Button */}
-          <Link 
-            to="/" 
+          <button 
+            onClick={() => navigate('/')}
             className="text-white hover:text-red-400 inline-flex items-center mb-6 text-sm transition-colors group"
           >
             <FaArrowLeft className="mr-2 group-hover:-translate-x-1 transition-transform"/> 
             Back to Home
-          </Link>
+          </button>
 
           <div className="flex flex-col md:flex-row gap-8 items-start">
             {/* Movie Poster */}
@@ -438,16 +445,15 @@ const MoviePage = () => {
                                 </p>
                               </div>
 
-                              {/* Showtimes */}
+                              {/* Showtimes - FIXED */}
                               <div className="flex flex-wrap gap-3">
                                 {theatre.shows
                                   .filter(show => show.status === 'active')
                                   .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
                                   .map(show => (
-                                    <Link
+                                    <button
                                       key={show._id}
-                                      to={`/booking/${show._id}`}
-                                      onClick={() => setShowBookingModal(false)}
+                                      onClick={() => handleShowtimeClick(show._id)}
                                       className="group bg-white dark:bg-gray-800 hover:bg-green-50 dark:hover:bg-green-900/20 border-2 border-gray-300 dark:border-gray-600 hover:border-green-500 dark:hover:border-green-500 rounded-lg px-4 py-3 transition-all min-w-[100px] text-center"
                                     >
                                       <div className="text-base font-bold text-gray-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400 mb-1">
@@ -463,7 +469,7 @@ const MoviePage = () => {
                                       <div className="text-sm text-green-600 dark:text-green-400 font-bold">
                                         {currencySymbol}{show.price}
                                       </div>
-                                    </Link>
+                                    </button>
                                   ))}
                               </div>
                             </div>
