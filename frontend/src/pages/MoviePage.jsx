@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import api from '../services/api';
 import { getShows } from '../services/showService';
-import { FaClock, FaMapMarkerAlt, FaVideo, FaArrowLeft, FaCalendarAlt, FaLanguage, FaFilm, FaTheaterMasks } from 'react-icons/fa';
+import { FaClock, FaMapMarkerAlt, FaVideo, FaArrowLeft, FaCalendarAlt, FaLanguage, FaFilm, FaTheaterMasks, FaBan } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const MoviePage = () => {
@@ -24,8 +24,13 @@ const MoviePage = () => {
       const movieRes = await api.get(`/movies/${id}`);
       setMovie(movieRes.data);
       const showsData = await getShows({ movieId: id });
-      const futureShows = showsData.filter(s => new Date(s.startTime) > new Date());
-      setShows(futureShows);
+      
+      // ✅ Filter out cancelled shows AND past shows for public view
+      const activeShows = showsData.filter(s => 
+        s.status === 'active' && new Date(s.startTime) > new Date()
+      );
+      
+      setShows(activeShows);
       setLoading(false);
     } catch (error) {
       console.error(error);
@@ -166,10 +171,13 @@ const MoviePage = () => {
                    <FaCalendarAlt className="text-5xl text-gray-400 dark:text-gray-600 mx-auto" />
                  </div>
                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                   No Shows Scheduled
+                   No Shows Available
                  </h3>
                  <p className="text-gray-600 dark:text-gray-400">
-                   Showtimes for this movie will be available soon.
+                   No active shows are scheduled for this movie at the moment.
+                 </p>
+                 <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
+                   Please check back later for upcoming showtimes.
                  </p>
              </div>
          ) : (
@@ -199,7 +207,18 @@ const MoviePage = () => {
                 {/* Theatre List */}
                 {selectedCity ? (
                     <div className="space-y-6 animate-fade-in">
-                        {theatreList.map(theatre => (
+                        {theatreList.length === 0 ? (
+                          <div className="bg-white dark:bg-gray-800 p-8 rounded-xl text-center border border-gray-200 dark:border-gray-700">
+                            <FaBan className="text-4xl text-gray-400 dark:text-gray-600 mx-auto mb-3" />
+                            <p className="text-gray-700 dark:text-gray-300 font-medium">
+                              No active shows available in {selectedCity}
+                            </p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                              Try selecting a different city or check back later.
+                            </p>
+                          </div>
+                        ) : (
+                          theatreList.map(theatre => (
                             <div 
                               key={theatre._id} 
                               className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow"
@@ -231,7 +250,9 @@ const MoviePage = () => {
 
                                 {/* Showtimes */}
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                                    {theatre.shows.map(show => (
+                                    {theatre.shows
+                                      .filter(show => show.status === 'active') // ✅ Extra safety check
+                                      .map(show => (
                                         <Link 
                                            key={show._id} 
                                            to={`/booking/${show._id}`}
@@ -249,8 +270,17 @@ const MoviePage = () => {
                                         </Link>
                                     ))}
                                 </div>
+
+                                {/* No Shows Message (if all filtered out) */}
+                                {theatre.shows.filter(show => show.status === 'active').length === 0 && (
+                                  <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
+                                    <FaBan className="inline mr-2" />
+                                    No active shows available at this theatre
+                                  </div>
+                                )}
                             </div>
-                        ))}
+                        ))
+                        )}
                     </div>
                 ) : (
                     <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 p-8 rounded-xl border-2 border-dashed border-blue-200 dark:border-gray-600">

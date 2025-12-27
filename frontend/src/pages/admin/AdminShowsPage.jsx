@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-import { FaPlus, FaTrash, FaEdit, FaClock, FaBan, FaCheck, FaTimes } from "react-icons/fa";
+import { FaPlus, FaTrash, FaEdit, FaClock, FaBan, FaCheck, FaTimes, FaPlayCircle, FaCalendarCheck, FaTimesCircle } from "react-icons/fa";
 import { getAdminMovies } from "../../services/movieService";
 import { getTheatres } from "../../services/theatreService";
 import { createShow, getShows, updateShow, cancelShow, deleteShow } from "../../services/showService";
@@ -19,6 +19,7 @@ const AdminShowsPage = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancellingShowId, setCancellingShowId] = useState(null);
   const [cancelReason, setCancelReason] = useState("");
+  const [activeTab, setActiveTab] = useState('running'); // running, scheduled, cancelled
 
   const initialFormState = {
     movieId: "",
@@ -60,6 +61,33 @@ const AdminShowsPage = () => {
       setLoading(false);
     }
   };
+
+  // Filter shows based on active tab
+  const filterShows = () => {
+    const now = new Date();
+    
+    if (activeTab === 'running') {
+      // Show is currently running (started but not ended, and not cancelled)
+      return shows.filter(show => {
+        const start = new Date(show.startTime);
+        const end = new Date(show.endTime);
+        return show.status === 'active' && start <= now && end >= now;
+      });
+    } else if (activeTab === 'scheduled') {
+      // Show is scheduled for future (not started yet, and not cancelled)
+      return shows.filter(show => {
+        const start = new Date(show.startTime);
+        return show.status === 'active' && start > now;
+      });
+    } else if (activeTab === 'cancelled') {
+      // Show is cancelled
+      return shows.filter(show => show.status === 'cancelled');
+    }
+    
+    return shows;
+  };
+
+  const filteredShows = filterShows();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -317,7 +345,7 @@ const AdminShowsPage = () => {
             </p>
             <div className="space-y-2 mb-6">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block">
-                Reason for Cancellation (Optional)
+                Reason for Cancellation *
               </label>
               <textarea
                 value={cancelReason}
@@ -325,12 +353,14 @@ const AdminShowsPage = () => {
                 placeholder="e.g., Technical issues, Low bookings, etc."
                 className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 p-3 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 outline-none transition-all resize-none"
                 rows="3"
+                required
               />
             </div>
             <div className="flex gap-3">
               <button
                 onClick={confirmCancelShow}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-lg transition-all flex items-center justify-center gap-2"
+                disabled={!cancelReason.trim()}
+                className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white py-2.5 rounded-lg transition-all flex items-center justify-center gap-2"
               >
                 <FaCheck /> Confirm Cancel
               </button>
@@ -349,6 +379,40 @@ const AdminShowsPage = () => {
         </div>
       )}
 
+      {/* Tabs */}
+      <div className="bg-white dark:bg-gray-800 p-1.5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 inline-flex mb-8">
+        <button
+          onClick={() => setActiveTab('running')}
+          className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 flex items-center gap-2 ${
+            activeTab === 'running'
+              ? 'bg-green-600 dark:bg-green-500 text-white shadow-md'
+              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+          }`}
+        >
+          <FaPlayCircle /> Running
+        </button>
+        <button
+          onClick={() => setActiveTab('scheduled')}
+          className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 flex items-center gap-2 ${
+            activeTab === 'scheduled'
+              ? 'bg-blue-600 dark:bg-blue-500 text-white shadow-md'
+              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+          }`}
+        >
+          <FaCalendarCheck /> Scheduled
+        </button>
+        <button
+          onClick={() => setActiveTab('cancelled')}
+          className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 flex items-center gap-2 ${
+            activeTab === 'cancelled'
+              ? 'bg-red-600 dark:bg-red-500 text-white shadow-md'
+              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+          }`}
+        >
+          <FaTimesCircle /> Cancelled
+        </button>
+      </div>
+
       {/* Shows List */}
       <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700">
         <div className="overflow-x-auto">
@@ -359,24 +423,24 @@ const AdminShowsPage = () => {
                 <th className="p-4">Theatre</th>
                 <th className="p-4">Date & Time</th>
                 <th className="p-4">Price</th>
-                <th className="p-4">Status</th>
+                {activeTab === 'cancelled' && <th className="p-4">Cancel Reason</th>}
                 <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {shows.length === 0 ? (
+              {filteredShows.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="p-8 text-center text-gray-500 dark:text-gray-400">
-                    No shows scheduled yet. Click "Schedule Show" to add one.
+                  <td colSpan={activeTab === 'cancelled' ? "6" : "5"} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                    {activeTab === 'running' && "No shows currently running."}
+                    {activeTab === 'scheduled' && "No shows scheduled yet."}
+                    {activeTab === 'cancelled' && "No cancelled shows."}
                   </td>
                 </tr>
               ) : (
-                shows.map((show) => (
+                filteredShows.map((show) => (
                   <tr 
                     key={show._id} 
-                    className={`hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors ${
-                      show.status === 'cancelled' ? 'opacity-60' : ''
-                    }`}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
                   >
                     <td className="p-4">
                       <div className="font-bold text-gray-900 dark:text-white">
@@ -404,17 +468,13 @@ const AdminShowsPage = () => {
                         {currencySymbol}{show.price}
                       </div>
                     </td>
-                    <td className="p-4">
-                      {show.status === 'cancelled' ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-full text-xs font-medium">
-                          <FaBan className="text-xs" /> Cancelled
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-xs font-medium">
-                          <FaCheck className="text-xs" /> Active
-                        </span>
-                      )}
-                    </td>
+                    {activeTab === 'cancelled' && (
+                      <td className="p-4">
+                        <div className="text-sm text-gray-700 dark:text-gray-300 max-w-xs">
+                          {show.cancelReason || 'No reason provided'}
+                        </div>
+                      </td>
+                    )}
                     <td className="p-4">
                       <div className="flex items-center justify-end gap-2">
                         {show.status !== 'cancelled' && (

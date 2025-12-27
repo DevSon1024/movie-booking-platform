@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import api from "../services/api";
 import toast from "react-hot-toast";
-import { FaCreditCard, FaArrowLeft, FaCheckCircle, FaTimes } from "react-icons/fa";
+import { FaCreditCard, FaArrowLeft, FaCheckCircle, FaTimes, FaExclamationTriangle } from "react-icons/fa";
 
 const BookingPage = () => {
   const { id } = useParams();
@@ -91,6 +91,42 @@ const BookingPage = () => {
           >
             Go Back
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ CHECK IF SHOW IS CANCELLED
+  if (show.status === 'cancelled') {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-800 rounded-xl p-8 text-center">
+          <FaExclamationTriangle className="text-6xl text-red-600 dark:text-red-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-red-700 dark:text-red-300 mb-3">
+            Show Cancelled
+          </h2>
+          <p className="text-gray-700 dark:text-gray-300 mb-2">
+            This show has been cancelled by the theatre.
+          </p>
+          {show.cancelReason && (
+            <p className="text-sm text-gray-600 dark:text-gray-400 italic mb-6">
+              Reason: {show.cancelReason}
+            </p>
+          )}
+          <div className="space-y-3">
+            <button
+              onClick={() => navigate(`/movie/${show.movie._id}`)}
+              className="w-full bg-red-600 dark:bg-red-500 hover:bg-red-700 dark:hover:bg-red-600 text-white px-6 py-3 rounded-lg font-bold transition-all"
+            >
+              View Other Shows
+            </button>
+            <button
+              onClick={() => navigate('/')}
+              className="w-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white px-6 py-3 rounded-lg font-bold transition-all"
+            >
+              Back to Home
+            </button>
+          </div>
         </div>
       </div>
     );

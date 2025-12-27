@@ -71,7 +71,7 @@ const createShow = async (req, res) => {
   }
 };
 
-// @desc    Get All Shows (Filtered)
+// @desc    Get All Shows (Return ALL shows including cancelled)
 // @route   GET /api/shows
 // @access  Public
 const getShows = async (req, res) => {
@@ -133,7 +133,6 @@ const updateShow = async (req, res) => {
       return res.status(404).json({ message: 'Show not found' });
     }
 
-    // Prevent updating cancelled shows
     if (show.status === 'cancelled') {
       return res.status(400).json({ message: 'Cannot update a cancelled show' });
     }
@@ -156,7 +155,6 @@ const updateShow = async (req, res) => {
     const start = new Date(startTime);
     const end = new Date(start.getTime() + (movie.duration * 60000) + (15 * 60000));
 
-    // Check for overlapping shows (excluding current show)
     const overlappingShow = await Show.findOne({
       _id: { $ne: req.params.id },
       theatre: theatreId,
@@ -171,7 +169,6 @@ const updateShow = async (req, res) => {
       return res.status(400).json({ message: 'Show time overlaps with an existing show on this screen.' });
     }
 
-    // Update show details
     show.movie = movieId;
     show.theatre = theatreId;
     show.screenName = screenName;
@@ -181,7 +178,6 @@ const updateShow = async (req, res) => {
 
     const updatedShow = await show.save();
     
-    // Populate before sending response
     await updatedShow.populate('movie', 'title duration language');
     await updatedShow.populate('theatre', 'name city address facilities');
 
@@ -215,9 +211,6 @@ const cancelShow = async (req, res) => {
     show.cancelledAt = new Date();
 
     const cancelledShow = await show.save();
-
-    // TODO: Send notifications to users who booked this show
-    // You can implement email/notification logic here
 
     res.json(cancelledShow);
   } catch (error) {
