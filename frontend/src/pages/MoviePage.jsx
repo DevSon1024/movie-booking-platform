@@ -3,7 +3,18 @@ import { useParams, Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import api from '../services/api';
 import { getShows } from '../services/showService';
-import { FaClock, FaMapMarkerAlt, FaVideo, FaArrowLeft, FaCalendarAlt, FaLanguage, FaFilm, FaTheaterMasks, FaBan } from 'react-icons/fa';
+import { 
+  FaClock, 
+  FaMapMarkerAlt, 
+  FaArrowLeft, 
+  FaCalendarAlt, 
+  FaStar,
+  FaTicketAlt,
+  FaTimes,
+  FaSearch,
+  FaTheaterMasks,
+  FaChevronRight
+} from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const MoviePage = () => {
@@ -12,8 +23,13 @@ const MoviePage = () => {
   
   const [movie, setMovie] = useState(null);
   const [shows, setShows] = useState([]);
-  const [selectedCity, setSelectedCity] = useState('');
   const [loading, setLoading] = useState(true);
+  
+  // Booking modal states
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [searchCity, setSearchCity] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -25,43 +41,95 @@ const MoviePage = () => {
       setMovie(movieRes.data);
       const showsData = await getShows({ movieId: id });
       
-      // ✅ Filter out cancelled shows AND past shows for public view
+      // Filter out cancelled shows AND past shows
       const activeShows = showsData.filter(s => 
         s.status === 'active' && new Date(s.startTime) > new Date()
       );
       
       setShows(activeShows);
+      
+      // Set default date to today
+      const today = new Date().toISOString().split('T')[0];
+      setSelectedDate(today);
+      
       setLoading(false);
     } catch (error) {
       console.error(error);
-      toast.error('Failed to load data');
+      toast.error('Failed to load movie details');
       setLoading(false);
     }
   };
 
-  const cities = [...new Set(shows.map(show => show.theatre?.city).filter(Boolean))];
+  // Get unique cities from shows
+  const allCities = [...new Set(shows.map(show => show.theatre?.city).filter(Boolean))];
+  
+  // Filter cities based on search
+  const filteredCities = allCities.filter(city => 
+    city.toLowerCase().includes(searchCity.toLowerCase())
+  );
 
-  const getFilteredTheatres = () => {
-     if (!selectedCity) return [];
-     const filtered = shows.filter(show => show.theatre?.city === selectedCity);
-     
-     const theatreMap = {};
-     filtered.forEach(show => {
-         const tId = show.theatre._id;
-         if (!theatreMap[tId]) {
-             theatreMap[tId] = { ...show.theatre, shows: [] };
-         }
-         theatreMap[tId].shows.push(show);
-     });
-     return Object.values(theatreMap);
+  // Get unique dates from shows
+  const getAvailableDates = () => {
+    const dates = [...new Set(shows.map(show => {
+      const date = new Date(show.startTime);
+      return date.toISOString().split('T')[0];
+    }))];
+    return dates.sort();
+  };
+
+  const availableDates = getAvailableDates();
+
+  // Format date for display
+  const formatDateDisplay = (dateString) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    if (date.toDateString() === today.toDateString()) return 'Today';
+    if (date.toDateString() === tomorrow.toDateString()) return 'Tomorrow';
+    
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  // Get theatres for selected city and date
+  const getTheatresForCityAndDate = () => {
+    if (!selectedCity || !selectedDate) return [];
+    
+    const filtered = shows.filter(show => {
+      const showDate = new Date(show.startTime).toISOString().split('T')[0];
+      return show.theatre?.city === selectedCity && 
+             showDate === selectedDate &&
+             show.status === 'active';
+    });
+    
+    const theatreMap = {};
+    filtered.forEach(show => {
+      const tId = show.theatre._id;
+      if (!theatreMap[tId]) {
+        theatreMap[tId] = { ...show.theatre, shows: [] };
+      }
+      theatreMap[tId].shows.push(show);
+    });
+    
+    return Object.values(theatreMap);
+  };
+
+  const theatreList = getTheatresForCityAndDate();
+
+  // Convert minutes to hours format
+  const formatRuntime = (minutes) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h ${mins}m`;
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-gray-500 dark:text-gray-400 text-center animate-pulse">
-          <div className="w-12 h-12 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-4"></div>
-          Loading Movie Details...
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-red-600 dark:border-red-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading Movie...</p>
         </div>
       </div>
     );
@@ -71,10 +139,10 @@ const MoviePage = () => {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl text-red-600 dark:text-red-400 mb-4">Movie Not Found</h2>
+          <h2 className="text-2xl text-red-600 dark:text-red-400 mb-4">Movie Not Found</h2>
           <Link
             to="/"
-            className="bg-red-600 dark:bg-red-500 hover:bg-red-700 dark:hover:bg-red-600 text-white px-6 py-2 rounded-lg transition-all"
+            className="bg-red-600 dark:bg-red-500 hover:bg-red-700 dark:hover:bg-red-600 text-white px-6 py-3 rounded-lg transition-all inline-block"
           >
             Back to Home
           </Link>
@@ -83,215 +151,333 @@ const MoviePage = () => {
     );
   }
 
-  const theatreList = getFilteredTheatres();
-
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200 pb-20">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
       
-      {/* Hero Section */}
-      <div className="relative w-full h-[400px] md:h-[500px] overflow-hidden">
-         {/* Background Image with Overlay */}
-         <div className="absolute inset-0">
-            <img 
-              src={movie.posterUrl} 
-              className="w-full h-full object-cover" 
-              alt="backdrop" 
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-gray-50 dark:from-gray-900 via-gray-50/95 dark:via-gray-900/95 to-gray-50/80 dark:to-gray-900/80"></div>
-            <div className="absolute inset-0 bg-gradient-to-r from-gray-50 dark:from-gray-900 via-transparent to-gray-50 dark:to-gray-900"></div>
-         </div>
-         
-         {/* Content */}
-         <div className="container mx-auto px-4 py-8 relative z-10 flex flex-col md:flex-row items-center md:items-end gap-6 md:gap-8 h-full">
+      {/* Hero Section with Movie Info */}
+      <div className="relative bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-black dark:via-gray-900 dark:to-black">
+        {/* Background Image with Overlay */}
+        <div className="absolute inset-0 opacity-20">
+          <img 
+            src={movie.posterUrl} 
+            className="w-full h-full object-cover blur-sm" 
+            alt="backdrop" 
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/95 to-gray-900/90"></div>
+        </div>
+        
+        {/* Content */}
+        <div className="relative container mx-auto px-4 py-8">
+          {/* Back Button */}
+          <Link 
+            to="/" 
+            className="text-white hover:text-red-400 inline-flex items-center mb-6 text-sm transition-colors group"
+          >
+            <FaArrowLeft className="mr-2 group-hover:-translate-x-1 transition-transform"/> 
+            Back to Home
+          </Link>
+
+          <div className="flex flex-col md:flex-row gap-8 items-start">
             {/* Movie Poster */}
             <div className="flex-shrink-0">
               <img 
-                 src={movie.posterUrl} 
-                 alt={movie.title} 
-                 className="w-48 md:w-64 rounded-xl shadow-2xl border-4 border-white dark:border-gray-800" 
+                src={movie.posterUrl} 
+                alt={movie.title} 
+                className="w-64 md:w-72 rounded-xl shadow-2xl border-4 border-gray-700 dark:border-gray-800" 
               />
             </div>
 
-            {/* Movie Info */}
-            <div className="text-gray-900 dark:text-white text-center md:text-left flex-1">
-                <Link 
-                  to="/" 
-                  className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white inline-flex items-center mb-4 text-sm transition-colors"
-                >
-                  <FaArrowLeft className="mr-2"/> Back to Movies
-                </Link>
-                
-                <h1 className="text-3xl md:text-5xl font-bold mb-4 text-gray-900 dark:text-white">
-                  {movie.title}
-                </h1>
-                
-                {/* Info Pills */}
-                <div className="flex flex-wrap justify-center md:justify-start gap-3 mb-5">
-                    <span className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 rounded-full border border-gray-200 dark:border-gray-700 text-sm font-medium flex items-center gap-2 shadow-sm">
-                      <FaLanguage className="text-blue-500" /> {movie.language}
-                    </span>
-                    <span className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 rounded-full border border-gray-200 dark:border-gray-700 text-sm font-medium flex items-center gap-2 shadow-sm">
-                      <FaFilm className="text-purple-500" /> {movie.genre}
-                    </span>
-                    <span className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 rounded-full border border-gray-200 dark:border-gray-700 text-sm font-medium flex items-center gap-2 shadow-sm">
-                      <FaClock className="text-red-500" /> {movie.duration}m
-                    </span>
-                    <span className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 rounded-full border border-gray-200 dark:border-gray-700 text-sm font-medium flex items-center gap-2 shadow-sm">
-                      <FaCalendarAlt className="text-green-500" /> {new Date(movie.releaseDate).getFullYear()}
-                    </span>
-                </div>
+            {/* Movie Details */}
+            <div className="flex-1 text-white">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">
+                {movie.title}
+              </h1>
 
-                {/* Description - Desktop */}
-                <p className="text-gray-700 dark:text-gray-300 max-w-3xl leading-relaxed hidden md:block text-base">
-                  {movie.description}
-                </p>
+              {/* Rating Badge */}
+              <div className="flex items-center gap-4 mb-6">
+                <div className="bg-gray-800 dark:bg-gray-900 px-4 py-2 rounded-lg flex items-center gap-2 border border-gray-700">
+                  <FaStar className="text-yellow-400" />
+                  <span className="font-bold">9.3/10</span>
+                  <span className="text-gray-400 text-sm">(235K votes)</span>
+                </div>
+                <button className="bg-white text-gray-900 hover:bg-gray-100 px-4 py-2 rounded-lg font-semibold transition-all">
+                  Rate Now
+                </button>
+              </div>
+
+              {/* Movie Meta Info */}
+              <div className="flex flex-wrap gap-4 mb-6 text-sm">
+                <div className="bg-gray-800 dark:bg-gray-900 px-4 py-2 rounded-lg border border-gray-700">
+                  <span className="font-semibold">{movie.genre}</span>
+                </div>
+                <div className="bg-gray-800 dark:bg-gray-900 px-4 py-2 rounded-lg border border-gray-700 flex items-center gap-2">
+                  <FaClock className="text-red-400" />
+                  <span>{formatRuntime(movie.duration)}</span>
+                </div>
+                <div className="bg-gray-800 dark:bg-gray-900 px-4 py-2 rounded-lg border border-gray-700 flex items-center gap-2">
+                  <FaCalendarAlt className="text-blue-400" />
+                  <span>{new Date(movie.releaseDate).toLocaleDateString('en-US', { 
+                    day: 'numeric', 
+                    month: 'short', 
+                    year: 'numeric' 
+                  })}</span>
+                </div>
+                <div className="bg-gray-800 dark:bg-gray-900 px-4 py-2 rounded-lg border border-gray-700">
+                  <span className="font-semibold">{movie.language}</span>
+                </div>
+                <div className="bg-red-600 px-4 py-2 rounded-lg font-bold">
+                  U/A
+                </div>
+              </div>
+
+              {/* Book Tickets Button */}
+              <button 
+                onClick={() => setShowBookingModal(true)}
+                className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-lg font-bold text-lg shadow-lg hover:shadow-xl transition-all flex items-center gap-3 group"
+              >
+                <FaTicketAlt className="text-xl" />
+                Book Tickets
+                <FaChevronRight className="group-hover:translate-x-1 transition-transform" />
+              </button>
             </div>
-         </div>
-      </div>
-      
-      {/* Description - Mobile */}
-      <div className="container mx-auto px-4 md:hidden mb-8">
-          <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed text-center">
-            {movie.description}
-          </p>
+          </div>
+        </div>
       </div>
 
-      {/* Booking Section */}
-      <div className="container mx-auto px-4">
-         <div className="flex items-center gap-3 mb-6">
-            <FaTheaterMasks className="text-red-600 dark:text-red-400 text-2xl" />
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-              Book Tickets
-            </h2>
-         </div>
-         
-         {cities.length === 0 ? (
-             <div className="bg-white dark:bg-gray-800 p-12 rounded-xl text-center border border-gray-200 dark:border-gray-700">
-                 <div className="mb-4">
-                   <FaCalendarAlt className="text-5xl text-gray-400 dark:text-gray-600 mx-auto" />
-                 </div>
-                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                   No Shows Available
-                 </h3>
-                 <p className="text-gray-600 dark:text-gray-400">
-                   No active shows are scheduled for this movie at the moment.
-                 </p>
-                 <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
-                   Please check back later for upcoming showtimes.
-                 </p>
-             </div>
-         ) : (
-             <>
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-12">
+        
+        {/* About the Movie */}
+        <section className="mb-16">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
+            About the Movie
+          </h2>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-200 dark:border-gray-700">
+            <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-lg">
+              {movie.description}
+            </p>
+          </div>
+        </section>
+
+        {/* Cast & Crew */}
+        <section className="mb-16">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
+            Cast & Crew
+          </h2>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-12 shadow-md border border-gray-200 dark:border-gray-700 text-center">
+            <FaTheaterMasks className="text-6xl text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-500 dark:text-gray-400 text-lg">
+              Cast and crew information will be available soon
+            </p>
+          </div>
+        </section>
+
+        {/* Reviews */}
+        <section className="mb-16">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
+            Movie Reviews
+          </h2>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-12 shadow-md border border-gray-200 dark:border-gray-700 text-center">
+            <FaStar className="text-6xl text-yellow-400 mx-auto mb-4" />
+            <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">
+              Review option coming soon
+            </p>
+            <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
+              Share your thoughts and rate this movie after watching!
+            </p>
+          </div>
+        </section>
+
+      </div>
+
+      {/* Booking Modal */}
+      {showBookingModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 overflow-y-auto">
+          <div className="min-h-screen px-4 py-8">
+            <div className="max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-2xl">
+              
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Book Tickets for {movie.title}
+                </h2>
+                <button 
+                  onClick={() => setShowBookingModal(false)}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+                >
+                  <FaTimes className="text-2xl" />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-6">
+                
                 {/* City Selection */}
-                <div className="mb-8">
-                    <label className="text-gray-700 dark:text-gray-300 text-sm font-medium mb-3 block">
+                {!selectedCity ? (
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
                       Select Your City
-                    </label>
-                    <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                       {cities.map(city => (
-                           <button 
-                             key={city}
-                             onClick={() => setSelectedCity(city)}
-                             className={`px-6 py-3 rounded-lg whitespace-nowrap transition-all font-medium border-2 ${
-                               selectedCity === city 
-                                 ? 'bg-red-600 dark:bg-red-500 border-red-600 dark:border-red-500 text-white shadow-lg scale-105' 
-                                 : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-red-300 dark:hover:border-red-700 hover:bg-red-50 dark:hover:bg-gray-700'
-                             }`}
-                           >
-                              <FaMapMarkerAlt className="inline mr-2"/> {city}
-                           </button>
-                       ))}
+                    </h3>
+                    
+                    {/* Search Bar */}
+                    <div className="relative mb-6">
+                      <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Search for your city..."
+                        value={searchCity}
+                        onChange={(e) => setSearchCity(e.target.value)}
+                        className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg pl-12 pr-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 outline-none transition-all"
+                      />
                     </div>
-                </div>
 
-                {/* Theatre List */}
-                {selectedCity ? (
-                    <div className="space-y-6 animate-fade-in">
-                        {theatreList.length === 0 ? (
-                          <div className="bg-white dark:bg-gray-800 p-8 rounded-xl text-center border border-gray-200 dark:border-gray-700">
-                            <FaBan className="text-4xl text-gray-400 dark:text-gray-600 mx-auto mb-3" />
-                            <p className="text-gray-700 dark:text-gray-300 font-medium">
-                              No active shows available in {selectedCity}
-                            </p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                              Try selecting a different city or check back later.
-                            </p>
-                          </div>
-                        ) : (
-                          theatreList.map(theatre => (
-                            <div 
-                              key={theatre._id} 
-                              className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow"
-                            >
-                                {/* Theatre Header */}
-                                <div className="flex flex-col lg:flex-row justify-between mb-5 pb-5 border-b border-gray-200 dark:border-gray-700">
-                                    <div className="mb-3 lg:mb-0">
-                                        <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-2">
-                                           <FaVideo className="text-red-500" /> {theatre.name}
-                                        </h3>
-                                        <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                                          <FaMapMarkerAlt className="text-gray-400" />
-                                          {theatre.address}
-                                        </p>
-                                    </div>
-                                    
-                                    {/* Facilities */}
-                                    <div className="flex flex-wrap gap-2">
-                                        {theatre.facilities?.map((f, i) => (
-                                            <span 
-                                              key={i} 
-                                              className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-full border border-gray-200 dark:border-gray-600"
-                                            >
-                                              {f}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Showtimes */}
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                                    {theatre.shows
-                                      .filter(show => show.status === 'active') // ✅ Extra safety check
-                                      .map(show => (
-                                        <Link 
-                                           key={show._id} 
-                                           to={`/booking/${show._id}`}
-                                           className="group bg-gray-50 dark:bg-gray-700 hover:bg-green-50 dark:hover:bg-green-900 border-2 border-gray-200 dark:border-gray-600 hover:border-green-500 dark:hover:border-green-400 rounded-lg p-4 transition-all hover:shadow-md flex flex-col items-center justify-center text-center"
-                                        >
-                                            <span className="text-base font-bold text-gray-900 dark:text-white group-hover:text-green-700 dark:group-hover:text-green-300 mb-1">
-                                                {new Date(show.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                            </span>
-                                            <span className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                                                {show.screenName}
-                                            </span>
-                                            <span className="text-sm text-green-600 dark:text-green-400 group-hover:text-green-700 dark:group-hover:text-green-300 font-bold">
-                                                {currencySymbol}{show.price}
-                                            </span>
-                                        </Link>
-                                    ))}
-                                </div>
-
-                                {/* No Shows Message (if all filtered out) */}
-                                {theatre.shows.filter(show => show.status === 'active').length === 0 && (
-                                  <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
-                                    <FaBan className="inline mr-2" />
-                                    No active shows available at this theatre
-                                  </div>
-                                )}
-                            </div>
-                        ))
-                        )}
-                    </div>
-                ) : (
-                    <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 p-8 rounded-xl border-2 border-dashed border-blue-200 dark:border-gray-600">
-                        <p className="text-gray-700 dark:text-gray-300 text-center font-medium">
-                          👆 Select a city above to view theatres and showtimes
+                    {/* Cities Grid */}
+                    {allCities.length === 0 ? (
+                      <div className="text-center py-12">
+                        <FaMapMarkerAlt className="text-5xl text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+                        <p className="text-gray-500 dark:text-gray-400">
+                          No shows available for this movie yet
                         </p>
+                      </div>
+                    ) : filteredCities.length === 0 ? (
+                      <div className="text-center py-12">
+                        <p className="text-gray-500 dark:text-gray-400">
+                          No cities found matching "{searchCity}"
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-96 overflow-y-auto pr-2">
+                        {filteredCities.map(city => (
+                          <button
+                            key={city}
+                            onClick={() => {
+                              setSelectedCity(city);
+                              setSearchCity('');
+                            }}
+                            className="bg-gray-50 dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 border-2 border-gray-200 dark:border-gray-600 hover:border-red-500 dark:hover:border-red-500 rounded-lg p-4 transition-all group"
+                          >
+                            <FaMapMarkerAlt className="text-2xl text-gray-400 group-hover:text-red-500 mx-auto mb-2 transition-colors" />
+                            <p className="font-semibold text-gray-900 dark:text-white text-sm">
+                              {city}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    {/* Selected City Header */}
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-3">
+                        <FaMapMarkerAlt className="text-red-500 text-xl" />
+                        <span className="text-lg font-bold text-gray-900 dark:text-white">
+                          {selectedCity}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedCity('');
+                          setSearchCity('');
+                        }}
+                        className="text-red-600 dark:text-red-400 hover:underline text-sm font-medium"
+                      >
+                        Change City
+                      </button>
                     </div>
+
+                    {/* Date Selection */}
+                    <div className="mb-6">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                        Select Date
+                      </h3>
+                      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                        {availableDates.map(date => (
+                          <button
+                            key={date}
+                            onClick={() => setSelectedDate(date)}
+                            className={`px-6 py-3 rounded-lg whitespace-nowrap transition-all font-medium border-2 flex-shrink-0 ${
+                              selectedDate === date
+                                ? 'bg-red-600 border-red-600 text-white shadow-lg'
+                                : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-red-300 dark:hover:border-red-700'
+                            }`}
+                          >
+                            {formatDateDisplay(date)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Theatres List */}
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                        Select Theatre & Showtime
+                      </h3>
+                      
+                      {theatreList.length === 0 ? (
+                        <div className="text-center py-12 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                          <FaTheaterMasks className="text-5xl text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+                          <p className="text-gray-500 dark:text-gray-400">
+                            No shows available for the selected date in {selectedCity}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                          {theatreList.map(theatre => (
+                            <div 
+                              key={theatre._id}
+                              className="bg-gray-50 dark:bg-gray-700 rounded-lg p-5 border border-gray-200 dark:border-gray-600"
+                            >
+                              {/* Theatre Info */}
+                              <div className="mb-4">
+                                <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                                  {theatre.name}
+                                </h4>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  {theatre.address}
+                                </p>
+                              </div>
+
+                              {/* Showtimes */}
+                              <div className="flex flex-wrap gap-3">
+                                {theatre.shows
+                                  .filter(show => show.status === 'active')
+                                  .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
+                                  .map(show => (
+                                    <Link
+                                      key={show._id}
+                                      to={`/booking/${show._id}`}
+                                      onClick={() => setShowBookingModal(false)}
+                                      className="group bg-white dark:bg-gray-800 hover:bg-green-50 dark:hover:bg-green-900/20 border-2 border-gray-300 dark:border-gray-600 hover:border-green-500 dark:hover:border-green-500 rounded-lg px-4 py-3 transition-all min-w-[100px] text-center"
+                                    >
+                                      <div className="text-base font-bold text-gray-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400 mb-1">
+                                        {new Date(show.startTime).toLocaleTimeString([], {
+                                          hour: '2-digit',
+                                          minute: '2-digit',
+                                          hour12: true
+                                        })}
+                                      </div>
+                                      <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+                                        {show.screenName}
+                                      </div>
+                                      <div className="text-sm text-green-600 dark:text-green-400 font-bold">
+                                        {currencySymbol}{show.price}
+                                      </div>
+                                    </Link>
+                                  ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 )}
-             </>
-         )}
-      </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
