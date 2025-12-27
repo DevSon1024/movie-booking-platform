@@ -1,10 +1,11 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector, useDispatch } from "react-redux"; // Import useSelector
 import { logout } from "../redux/slices/authSlice";
 import { FaTicketAlt, FaUserCircle } from "react-icons/fa";
 
 const Navbar = () => {
   const { userInfo } = useSelector((state) => state.auth);
+  const { siteName } = useSelector((state) => state.settings); // Get Site Name from Redux
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -22,7 +23,8 @@ const Navbar = () => {
             className="flex items-center space-x-2 text-2xl font-bold text-red-500"
           >
             <FaTicketAlt />
-            <span>MovieDeck</span>
+            {/* Dynamic Site Name */}
+            <span>{siteName || 'MovieDeck'}</span>
           </Link>
 
           {/* Menu Items */}
@@ -33,7 +35,6 @@ const Navbar = () => {
 
             {userInfo ? (
               <div className="flex items-center space-x-4">
-                {/* 1. ADMIN DASHBOARD LINK (Only visible to Admins) */}
                 {userInfo.role === "admin" && (
                   <Link
                     to="/admin"
@@ -43,13 +44,11 @@ const Navbar = () => {
                   </Link>
                 )}
 
-                {/* User Name Badge */}
                 <div className="flex items-center space-x-1 text-gray-300">
                   <FaUserCircle className="text-xl" />
                   <span className="font-semibold">{userInfo.name}</span>
                 </div>
 
-                {/* Logout Button */}
                 <button
                   onClick={handleLogout}
                   className="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded transition"
@@ -58,7 +57,6 @@ const Navbar = () => {
                 </button>
               </div>
             ) : (
-              // Show this if Logged Out
               <div className="space-x-4">
                 <Link to="/login" className="hover:text-white text-gray-300">
                   Login

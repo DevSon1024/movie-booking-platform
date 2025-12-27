@@ -1,64 +1,113 @@
 import { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { updateSettingsAPI } from '../../services/settingsService';
+import { getSettings, setGlobalSettings } from '../../redux/slices/settingsSlice';
 import toast from 'react-hot-toast';
+import { FaSave, FaGlobe, FaMoneyBill } from 'react-icons/fa';
 
 const AdminSettingsPage = () => {
-  const [settings, setSettings] = useState({
-    currency: '$',
-    siteName: 'MovieDeck',
-    maintenanceMode: false
+  const dispatch = useDispatch();
+  // Read current global state
+  const { siteName, currencySymbol } = useSelector((state) => state.settings);
+  
+  const [formData, setFormData] = useState({
+    siteName: '',
+    currencySymbol: '',
+    currencyCode: 'USD'
   });
 
+  // Sync local form state with Redux state on load
   useEffect(() => {
-    const saved = localStorage.getItem('siteSettings');
-    if (saved) setSettings(JSON.parse(saved));
-  }, []);
+    setFormData({
+      siteName: siteName,
+      currencySymbol: currencySymbol,
+      currencyCode: 'USD'
+    });
+  }, [siteName, currencySymbol]);
 
-  const handleSave = () => {
-    localStorage.setItem('siteSettings', JSON.stringify(settings));
-    toast.success('Settings Saved!');
-    // In a real app, you would dispatch a Redux action to update the app globally
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const updated = await updateSettingsAPI(formData);
+      
+      // Update Redux Store immediately
+      dispatch(setGlobalSettings({
+          siteName: updated.siteName,
+          currencySymbol: updated.currencySymbol
+      }));
+      
+      toast.success('Settings Saved Successfully!');
+    } catch (error) {
+      toast.error('Failed to update settings');
+    }
   };
 
   return (
-    <div className="max-w-xl">
-      <h2 className="text-2xl font-bold mb-6">System Settings</h2>
+    <div className="max-w-2xl mx-auto">
+      <h1 className="text-3xl font-bold mb-8 flex items-center gap-3">
+        <FaGlobe className="text-blue-500" /> Global Settings
+      </h1>
       
-      <div className="space-y-4">
-        <div>
-          <label className="block text-gray-400 mb-2">Currency Symbol</label>
-          <select 
-            value={settings.currency} 
-            onChange={(e) => setSettings({...settings, currency: e.target.value})}
-            className="w-full bg-gray-700 p-3 rounded text-white"
-          >
-            <option value="$">USD ($)</option>
-            <option value="₹">INR (₹)</option>
-            <option value="€">EUR (€)</option>
-          </select>
-        </div>
+      <div className="bg-gray-800 p-8 rounded-lg border border-gray-700 shadow-xl">
+        <form onSubmit={handleSubmit} className="space-y-6">
+            
+            {/* Website Name */}
+            <div>
+                <label className="block text-gray-400 text-sm font-bold mb-2">Website Name</label>
+                <div className="flex items-center bg-gray-700 rounded overflow-hidden">
+                    <span className="pl-4 text-gray-400"><FaGlobe /></span>
+                    <input 
+                        type="text" 
+                        name="siteName"
+                        value={formData.siteName}
+                        onChange={handleChange}
+                        className="bg-transparent text-white p-3 w-full focus:outline-none"
+                    />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">This will be visible in the navigation bar.</p>
+            </div>
 
-        <div>
-          <label className="block text-gray-400 mb-2">Website Name</label>
-          <input 
-            value={settings.siteName} 
-            onChange={(e) => setSettings({...settings, siteName: e.target.value})}
-            className="w-full bg-gray-700 p-3 rounded text-white" 
-          />
-        </div>
+            {/* Currency Configuration */}
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <label className="block text-gray-400 text-sm font-bold mb-2">Currency Symbol</label>
+                    <div className="flex items-center bg-gray-700 rounded overflow-hidden">
+                        <span className="pl-4 text-gray-400"><FaMoneyBill /></span>
+                        <input 
+                            type="text" 
+                            name="currencySymbol"
+                            placeholder="$"
+                            value={formData.currencySymbol}
+                            onChange={handleChange}
+                            className="bg-transparent text-white p-3 w-full focus:outline-none"
+                        />
+                    </div>
+                </div>
+                <div>
+                    <label className="block text-gray-400 text-sm font-bold mb-2">Currency Code</label>
+                    <input 
+                        type="text" 
+                        name="currencyCode"
+                        value={formData.currencyCode}
+                        onChange={handleChange}
+                        className="bg-gray-700 text-white p-3 rounded w-full focus:outline-none"
+                        placeholder="USD"
+                    />
+                </div>
+            </div>
 
-        <div className="flex items-center space-x-3 bg-gray-700 p-4 rounded">
-          <input 
-            type="checkbox" 
-            checked={settings.maintenanceMode}
-            onChange={(e) => setSettings({...settings, maintenanceMode: e.target.checked})}
-            className="w-5 h-5"
-          />
-          <span className="text-white">Enable Maintenance Mode (Stops all bookings)</span>
-        </div>
+            <div className="pt-4">
+                <button 
+                    type="submit" 
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded w-full flex justify-center items-center gap-2 transition"
+                >
+                    <FaSave /> Save Changes
+                </button>
+            </div>
 
-        <button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded w-full">
-          Save Configuration
-        </button>
+        </form>
       </div>
     </div>
   );
