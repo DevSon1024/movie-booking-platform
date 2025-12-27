@@ -15,15 +15,17 @@ const protect = async (req, res, next) => {
       // Fetch user but exclude password
       req.user = await User.findById(decoded.userId).select('-password');
       
+      if (!req.user) {
+        return res.status(401).json({ message: 'Not authorized, user not found' });
+      }
+      
       next();
     } catch (error) {
-      console.error(error);
-      res.status(401);
-      throw new Error('Not authorized, token failed');
+      console.error('Token verification error:', error.message);
+      return res.status(401).json({ message: 'Not authorized, token failed' });
     }
   } else {
-    res.status(401);
-    throw new Error('Not authorized, no token');
+    return res.status(401).json({ message: 'Not authorized, no token' });
   }
 };
 
@@ -32,8 +34,7 @@ const admin = (req, res, next) => {
   if (req.user && req.user.role === 'admin') {
     next();
   } else {
-    res.status(401);
-    throw new Error('Not authorized as an admin');
+    return res.status(403).json({ message: 'Not authorized as an admin' });
   }
 };
 

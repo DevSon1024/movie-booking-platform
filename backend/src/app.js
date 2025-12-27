@@ -1,7 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import dotenv from 'dotenv';
 
+// Import routes
 import userRoutes from './routes/userRoutes.js';
 import movieRoutes from './routes/movieRoutes.js';
 import theatreRoutes from './routes/theatreRoutes.js';
@@ -11,33 +13,38 @@ import reviewRoutes from './routes/reviewRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
 
+// Import error middleware
+import { notFound, errorHandler } from './middlewares/errorMiddleware.js';
+
+dotenv.config();
+
 const app = express();
 
-// --- 1. MIDDLEWARE (MUST BE AT THE TOP) ---
-
-// Fix: Use 'http' for localhost, not 'https' unless you set up SSL
+// Middleware
 app.use(cors({
-    origin: 'http://localhost:5173', 
-    credentials: true
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true
 }));
-
-// Fix: These must run BEFORE routes so req.body is not undefined
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// --- 2. ROUTES ---
+// Routes
 app.use('/api/users', userRoutes);
 app.use('/api/movies', movieRoutes);
-app.use('/api/theatres', theatreRoutes); 
+app.use('/api/theatres', theatreRoutes);
 app.use('/api/shows', showRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/settings', settingsRoutes);
 
+// Health check
 app.get('/', (req, res) => {
-    res.send('Movie Booking API is running...');
+  res.send('API is running...');
 });
+
+// Error Handling Middleware (MUST BE LAST)
+app.use(notFound);
+app.use(errorHandler);
 
 export default app;

@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-import { FaPlus, FaTrash, FaClock } from "react-icons/fa";
+import { FaPlus, FaTrash, FaEdit, FaClock, FaBan, FaCheck, FaTimes } from "react-icons/fa";
 import { getAdminMovies } from "../../services/movieService";
 import { getTheatres } from "../../services/theatreService";
-import { createShow, getShows, deleteShow } from "../../services/showService";
+import { createShow, getShows, updateShow, cancelShow, deleteShow } from "../../services/showService";
 import toast from "react-hot-toast";
 
 const AdminShowsPage = () => {
@@ -11,31 +11,32 @@ const AdminShowsPage = () => {
   const [shows, setShows] = useState([]);
   const [movies, setMovies] = useState([]);
   const [theatres, setTheatres] = useState([]);
-
-  // Dependent State: Screens available for the selected theatre
   const [availableScreens, setAvailableScreens] = useState([]);
-
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingShowId, setEditingShowId] = useState(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancellingShowId, setCancellingShowId] = useState(null);
+  const [cancelReason, setCancelReason] = useState("");
 
-  const [formData, setFormData] = useState({
+  const initialFormState = {
     movieId: "",
     theatreId: "",
     screenName: "",
     startTime: "",
     price: "",
-  });
+  };
+
+  const [formData, setFormData] = useState(initialFormState);
 
   useEffect(() => {
     loadInitialData();
   }, []);
 
-  // When theatre changes, update available screens
   useEffect(() => {
     if (formData.theatreId) {
-      const selectedTheatre = theatres.find(
-        (t) => t._id === formData.theatreId
-      );
+      const selectedTheatre = theatres.find((t) => t._id === formData.theatreId);
       setAvailableScreens(selectedTheatre ? selectedTheatre.screens : []);
     } else {
       setAvailableScreens([]);
@@ -64,31 +65,69 @@ const AdminShowsPage = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const resetForm = () => {
+    setFormData(initialFormState);
+    setIsEditing(false);
+    setEditingShowId(null);
+    setShowForm(false);
+  };
+
+  const handleEdit = (show) => {
+    setFormData({
+      movieId: show.movie._id,
+      theatreId: show.theatre._id,
+      screenName: show.screenName,
+      startTime: new Date(show.startTime).toISOString().slice(0, 16),
+      price: show.price,
+    });
+    setEditingShowId(show._id);
+    setIsEditing(true);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await createShow(formData);
-      toast.success("Show Scheduled Successfully!");
-      setShowForm(false);
-      setFormData({
-        movieId: "",
-        theatreId: "",
-        screenName: "",
-        startTime: "",
-        price: "",
-      });
+      if (isEditing) {
+        await updateShow(editingShowId, formData);
+        toast.success("Show Updated Successfully!");
+      } else {
+        await createShow(formData);
+        toast.success("Show Scheduled Successfully!");
+      }
+      resetForm();
       const updatedShows = await getShows();
       setShows(updatedShows);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to create show");
+      toast.error(error.response?.data?.message || `Failed to ${isEditing ? 'update' : 'create'} show`);
+    }
+  };
+
+  const handleCancelShow = (showId) => {
+    setCancellingShowId(showId);
+    setShowCancelModal(true);
+  };
+
+  const confirmCancelShow = async () => {
+    try {
+      await cancelShow(cancellingShowId, cancelReason);
+      toast.success("Show cancelled successfully");
+      setShowCancelModal(false);
+      setCancelReason("");
+      setCancellingShowId(null);
+      const updatedShows = await getShows();
+      setShows(updatedShows);
+    } catch (error) {
+      toast.error("Failed to cancel show");
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Delete this show?")) {
+    if (window.confirm("Permanently delete this show? This action cannot be undone.")) {
       try {
         await deleteShow(id);
-        toast.success("Show deleted");
+        toast.success("Show deleted permanently");
         const updatedShows = await getShows();
         setShows(updatedShows);
       } catch (error) {
@@ -114,11 +153,11 @@ const AdminShowsPage = () => {
             Manage Shows
           </h1>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Schedule and manage movie showtimes
+            Schedule, update, and manage movie showtimes
           </p>
         </div>
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => { resetForm(); setShowForm(!showForm); }}
           className="bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 transition-all duration-200 shadow-md hover:shadow-lg"
         >
           {showForm ? (
@@ -136,13 +175,10 @@ const AdminShowsPage = () => {
       {showForm && (
         <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-xl mb-8 border border-gray-200 dark:border-gray-700 shadow-lg animate-fade-in">
           <h2 className="text-xl font-bold mb-6 text-purple-600 dark:text-purple-400 flex items-center gap-2">
-            <FaClock className="text-lg" />
-            Schedule New Show
+            {isEditing ? <FaEdit className="text-lg" /> : <FaClock className="text-lg" />}
+            {isEditing ? 'Edit Show' : 'Schedule New Show'}
           </h2>
-          <form
-            onSubmit={handleSubmit}
-            className="grid grid-cols-1 md:grid-cols-2 gap-6"
-          >
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Movie Selection */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block">
@@ -159,11 +195,7 @@ const AdminShowsPage = () => {
                   -- Choose a movie --
                 </option>
                 {movies.map((m) => (
-                  <option 
-                    key={m._id} 
-                    value={m._id}
-                    className="text-gray-900 dark:text-white"
-                  >
+                  <option key={m._id} value={m._id} className="text-gray-900 dark:text-white">
                     {m.title}
                   </option>
                 ))}
@@ -186,11 +218,7 @@ const AdminShowsPage = () => {
                   -- Choose a theatre --
                 </option>
                 {theatres.map((t) => (
-                  <option 
-                    key={t._id} 
-                    value={t._id}
-                    className="text-gray-900 dark:text-white"
-                  >
+                  <option key={t._id} value={t._id} className="text-gray-900 dark:text-white">
                     {t.name}
                   </option>
                 ))}
@@ -214,11 +242,7 @@ const AdminShowsPage = () => {
                   {!formData.theatreId ? "Select theatre first" : "-- Choose a screen --"}
                 </option>
                 {availableScreens.map((s, i) => (
-                  <option 
-                    key={i} 
-                    value={s.name}
-                    className="text-gray-900 dark:text-white"
-                  >
+                  <option key={i} value={s.name} className="text-gray-900 dark:text-white">
                     {s.name} ({s.type})
                   </option>
                 ))}
@@ -258,34 +282,91 @@ const AdminShowsPage = () => {
               />
             </div>
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 dark:from-green-500 dark:to-green-600 dark:hover:from-green-600 dark:hover:to-green-700 text-white font-bold py-3 px-6 rounded-lg md:col-span-2 mt-4 transition-all duration-200 shadow-md hover:shadow-lg"
-            >
-              Confirm Schedule
-            </button>
+            {/* Submit Buttons */}
+            <div className="md:col-span-2 flex gap-3">
+              <button
+                type="submit"
+                className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 dark:from-green-500 dark:to-green-600 dark:hover:from-green-600 dark:hover:to-green-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+              >
+                {isEditing ? 'Update Show' : 'Confirm Schedule'}
+              </button>
+              {isEditing && (
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="px-6 py-3 bg-gray-500 hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-700 text-white rounded-lg transition-all"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
           </form>
+        </div>
+      )}
+
+      {/* Cancel Show Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full shadow-2xl">
+            <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+              <FaBan className="text-red-500" />
+              Cancel Show
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Are you sure you want to cancel this show? This will notify all users who booked tickets.
+            </p>
+            <div className="space-y-2 mb-6">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block">
+                Reason for Cancellation (Optional)
+              </label>
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="e.g., Technical issues, Low bookings, etc."
+                className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 p-3 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 outline-none transition-all resize-none"
+                rows="3"
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={confirmCancelShow}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-lg transition-all flex items-center justify-center gap-2"
+              >
+                <FaCheck /> Confirm Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setCancelReason("");
+                  setCancellingShowId(null);
+                }}
+                className="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2.5 rounded-lg transition-all flex items-center justify-center gap-2"
+              >
+                <FaTimes /> Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Shows List */}
       <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700">
         <div className="overflow-x-auto">
-          <table className="w-full text-left min-w-[600px]">
+          <table className="w-full text-left min-w-[700px]">
             <thead className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 uppercase text-xs font-semibold">
               <tr>
                 <th className="p-4">Movie</th>
                 <th className="p-4">Theatre</th>
                 <th className="p-4">Date & Time</th>
                 <th className="p-4">Price</th>
+                <th className="p-4">Status</th>
                 <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {shows.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="p-8 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan="6" className="p-8 text-center text-gray-500 dark:text-gray-400">
                     No shows scheduled yet. Click "Schedule Show" to add one.
                   </td>
                 </tr>
@@ -293,7 +374,9 @@ const AdminShowsPage = () => {
                 shows.map((show) => (
                   <tr 
                     key={show._id} 
-                    className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
+                    className={`hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors ${
+                      show.status === 'cancelled' ? 'opacity-60' : ''
+                    }`}
                   >
                     <td className="p-4">
                       <div className="font-bold text-gray-900 dark:text-white">
@@ -321,14 +404,45 @@ const AdminShowsPage = () => {
                         {currencySymbol}{show.price}
                       </div>
                     </td>
-                    <td className="p-4 text-right">
-                      <button
-                        onClick={() => handleDelete(show._id)}
-                        className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
-                        title="Delete show"
-                      >
-                        <FaTrash className="text-lg" />
-                      </button>
+                    <td className="p-4">
+                      {show.status === 'cancelled' ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-full text-xs font-medium">
+                          <FaBan className="text-xs" /> Cancelled
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-xs font-medium">
+                          <FaCheck className="text-xs" /> Active
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center justify-end gap-2">
+                        {show.status !== 'cancelled' && (
+                          <>
+                            <button
+                              onClick={() => handleEdit(show)}
+                              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 p-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
+                              title="Edit show"
+                            >
+                              <FaEdit className="text-lg" />
+                            </button>
+                            <button
+                              onClick={() => handleCancelShow(show._id)}
+                              className="text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 p-2 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all"
+                              title="Cancel show"
+                            >
+                              <FaBan className="text-lg" />
+                            </button>
+                          </>
+                        )}
+                        <button
+                          onClick={() => handleDelete(show._id)}
+                          className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                          title="Delete permanently"
+                        >
+                          <FaTrash className="text-lg" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
