@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { FaPlus, FaTrash, FaEdit, FaMapMarkerAlt, FaVideo } from 'react-icons/fa';
 import { getTheatres, createTheatre, updateTheatre, deleteTheatre } from '../../services/theatreService';
 import toast from 'react-hot-toast';
+import citiesData from '../../data/cities.json'; // Import the cities data
 
 const AdminTheatresPage = () => {
   const [theatres, setTheatres] = useState([]);
@@ -9,6 +10,11 @@ const AdminTheatresPage = () => {
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
+  
+  // City Autocomplete State
+  const [citySuggestions, setCitySuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const suggestionsRef = useRef(null);
 
   // Initial Form State
   const initialFormState = {
@@ -25,6 +31,15 @@ const AdminTheatresPage = () => {
 
   useEffect(() => {
     fetchTheatres();
+    
+    // Click outside to close suggestions
+    const handleClickOutside = (event) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const fetchTheatres = async () => {
@@ -39,7 +54,28 @@ const AdminTheatresPage = () => {
   };
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+
+    // Handle City Autocomplete
+    if (name === 'city') {
+      if (value.length > 1) {
+        const filtered = citiesData.filter(item => 
+          item.city.toLowerCase().startsWith(value.toLowerCase())
+        ).slice(0, 10); // Limit to 10 suggestions
+        setCitySuggestions(filtered);
+        setShowSuggestions(true);
+      } else {
+        setCitySuggestions([]);
+        setShowSuggestions(false);
+      }
+    }
+  };
+
+  const selectCity = (city, state) => {
+    setFormData({ ...formData, city: city }); // You can also append state if needed: `${city}, ${state}`
+    setCitySuggestions([]);
+    setShowSuggestions(false);
   };
 
   const handleScreenChange = (index, field, value) => {
@@ -122,6 +158,7 @@ const AdminTheatresPage = () => {
     setIsEditing(false);
     setEditId(null);
     setShowForm(false);
+    setCitySuggestions([]);
   };
 
   if (loading) {
@@ -183,18 +220,35 @@ const AdminTheatresPage = () => {
                 />
               </div>
               
-              <div className="space-y-2">
+              <div className="space-y-2 relative" ref={suggestionsRef}>
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block">
                   City *
                 </label>
                 <input 
                   name="city" 
-                  placeholder="e.g., Mumbai" 
+                  placeholder="Start typing city..." 
                   value={formData.city} 
                   onChange={handleChange} 
                   className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 p-3 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent outline-none transition-all" 
                   required 
+                  autoComplete="off"
                 />
+                
+                {/* Autocomplete Dropdown */}
+                {showSuggestions && citySuggestions.length > 0 && (
+                  <ul className="absolute z-10 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg mt-1 max-h-60 overflow-y-auto">
+                    {citySuggestions.map((item, index) => (
+                      <li 
+                        key={`${item.city}-${index}`}
+                        onClick={() => selectCity(item.city, item.state)}
+                        className="px-4 py-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer text-gray-700 dark:text-gray-200 border-b border-gray-100 dark:border-gray-600 last:border-0 flex justify-between"
+                      >
+                        <span className="font-medium">{item.city}</span>
+                        <span className="text-xs text-gray-400 flex items-center">{item.state}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
               
               <div className="space-y-2 md:col-span-2">

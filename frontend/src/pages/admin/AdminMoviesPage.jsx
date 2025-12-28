@@ -18,7 +18,7 @@ const AdminMoviesPage = () => {
 
   useEffect(() => { fetchMovies(); }, [search, sortBy]);
 
-  const fetchMovies = async () => { /* ... fetch logic same ... */ 
+  const fetchMovies = async () => {
       setLoading(true);
       const data = await getAdminMovies(search, sortBy);
       setMovies(data);

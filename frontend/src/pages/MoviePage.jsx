@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import api from '../services/api';
 import { getShows } from '../services/showService';
+import citiesData from '../data/cities.json';
 import { 
   FaClock, 
   FaMapMarkerAlt, 
@@ -31,9 +32,22 @@ const MoviePage = () => {
   const [searchCity, setSearchCity] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
+  
+  // Search Autocomplete State
+  const [citySuggestions, setCitySuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchRef = useRef(null);
 
   useEffect(() => {
     fetchData();
+    
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [id]);
 
   const fetchData = async () => {
@@ -61,11 +75,40 @@ const MoviePage = () => {
     }
   };
 
-  // Get unique cities from shows
-  const allCities = [...new Set(shows.map(show => show.theatre?.city).filter(Boolean))];
+  // Get unique cities from shows (available cities)
+  const availableCities = [...new Set(shows.map(show => show.theatre?.city).filter(Boolean))];
   
-  // Filter cities based on search
-  const filteredCities = allCities.filter(city => 
+  // Handle Search Input Change
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchCity(value);
+    
+    if (value.length > 1) {
+      // Search from the global JSON list
+      const filtered = citiesData.filter(item => 
+        item.city.toLowerCase().startsWith(value.toLowerCase())
+      ).slice(0, 5);
+      setCitySuggestions(filtered);
+      setShowSuggestions(true);
+    } else {
+      setCitySuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  // Select City from Suggestion
+  const selectCityFromSuggestion = (city) => {
+    setSearchCity(city);
+    setCitySuggestions([]);
+    setShowSuggestions(false);
+    // If the selected city has shows, select it automatically
+    if (availableCities.includes(city)) {
+       setSelectedCity(city);
+    }
+  };
+
+  // Filter existing available cities for the grid view based on search input
+  const filteredAvailableCities = availableCities.filter(city => 
     city.toLowerCase().includes(searchCity.toLowerCase())
   );
 
@@ -326,35 +369,62 @@ const MoviePage = () => {
                       Select Your City
                     </h3>
                     
-                    {/* Search Bar */}
-                    <div className="relative mb-6">
+                    {/* Search Bar with Autocomplete */}
+                    <div className="relative mb-6" ref={searchRef}>
                       <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                       <input
                         type="text"
                         placeholder="Search for your city..."
                         value={searchCity}
-                        onChange={(e) => setSearchCity(e.target.value)}
+                        onChange={handleSearchChange}
                         className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg pl-12 pr-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 outline-none transition-all"
+                        autoComplete="off"
                       />
+                      
+                      {/* Search Suggestions */}
+                      {showSuggestions && citySuggestions.length > 0 && (
+                        <div className="absolute z-10 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
+                          {citySuggestions.map((item, index) => (
+                            <button
+                              key={`${item.city}-${index}`}
+                              onClick={() => selectCityFromSuggestion(item.city)}
+                              className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm flex justify-between"
+                            >
+                              <span>{item.city}</span>
+                              <span className="text-xs text-gray-400">{item.state}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     {/* Cities Grid */}
-                    {allCities.length === 0 ? (
+                    {availableCities.length === 0 ? (
                       <div className="text-center py-12">
                         <FaMapMarkerAlt className="text-5xl text-gray-400 dark:text-gray-600 mx-auto mb-4" />
                         <p className="text-gray-500 dark:text-gray-400">
                           No shows available for this movie yet
                         </p>
                       </div>
-                    ) : filteredCities.length === 0 ? (
+                    ) : filteredAvailableCities.length === 0 ? (
                       <div className="text-center py-12">
                         <p className="text-gray-500 dark:text-gray-400">
-                          No cities found matching "{searchCity}"
+                          {searchCity && !availableCities.includes(searchCity) 
+                            ? `No shows currently available in "${searchCity}"` 
+                            : "No cities found matching your search"}
                         </p>
+                        {searchCity && (
+                          <button 
+                            onClick={() => setSearchCity('')}
+                            className="text-red-600 mt-2 hover:underline text-sm"
+                          >
+                            Clear search to see all available cities
+                          </button>
+                        )}
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-96 overflow-y-auto pr-2">
-                        {filteredCities.map(city => (
+                        {filteredAvailableCities.map(city => (
                           <button
                             key={city}
                             onClick={() => {
@@ -445,7 +515,7 @@ const MoviePage = () => {
                                 </p>
                               </div>
 
-                              {/* Showtimes - FIXED */}
+                              {/* Showtimes */}
                               <div className="flex flex-wrap gap-3">
                                 {theatre.shows
                                   .filter(show => show.status === 'active')

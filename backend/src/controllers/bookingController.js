@@ -7,8 +7,11 @@ import Show from '../models/Show.js';
 const createBooking = async (req, res) => {
   const { showId, selectedSeats } = req.body; 
 
-  // 1. Find the Show (Do NOT populate movie here, we need the ID)
-  const show = await Show.findById(showId);
+  // 1. Find the Show with populated movie and theatre
+  const show = await Show.findById(showId)
+    .populate('movie', 'title posterUrl duration language genre')
+    .populate('theatre', 'name address city');
+    
   if (!show) {
     res.status(404);
     throw new Error('Show not found');
@@ -24,7 +27,7 @@ const createBooking = async (req, res) => {
     throw new Error('One or more selected seats are already booked');
   }
 
-  // 3. Calculate Price (Use SHOW PRICE, not seat price)
+  // 3. Calculate Price
   const pricePerSeat = show.price;
   if (!pricePerSeat) {
     res.status(500);
@@ -48,12 +51,23 @@ const createBooking = async (req, res) => {
     const booking = new Booking({
       user: req.user._id,
       show: showId,
-      movie: show.movie, // Use ID from the show document
+      movie: show.movie._id, // Store just the ID
       seats: selectedSeats,
       totalPrice: totalPrice,
     });
 
     const createdBooking = await booking.save();
+    
+    // 6. Populate before sending response
+    await createdBooking.populate('movie', 'title posterUrl duration language genre');
+    await createdBooking.populate({
+      path: 'show',
+      populate: { 
+        path: 'theatre', 
+        select: 'name address city' 
+      }
+    });
+    
     res.status(201).json(createdBooking);
 
   } catch (error) {
@@ -69,7 +83,9 @@ const createBooking = async (req, res) => {
             }
         });
         await freshShow.save();
-    } catch (rbError) { console.error("Rollback failed", rbError); }
+    } catch (rbError) { 
+      console.error("Rollback failed", rbError); 
+    }
 
     res.status(500);
     throw new Error('Booking failed. Please try again.');
@@ -81,10 +97,13 @@ const createBooking = async (req, res) => {
 // @access  Private
 const getMyBookings = async (req, res) => {
   const bookings = await Booking.find({ user: req.user._id })
-    .populate('movie', 'title posterUrl')
+    .populate('movie', 'title posterUrl duration language genre')
     .populate({
         path: 'show',
-        populate: { path: 'theatre', select: 'name' } 
+        populate: { 
+          path: 'theatre', 
+          select: 'name address city' 
+        }
     })
     .sort({ createdAt: -1 });
     
