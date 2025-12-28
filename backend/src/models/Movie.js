@@ -1,5 +1,12 @@
 import mongoose from "mongoose";
 
+const castCrewSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  image: { type: String, required: true },
+  role: { type: String, required: true },
+  profession: { type: String }
+}, { _id: false });
+
 const movieSchema = new mongoose.Schema(
   {
     title: {
@@ -11,11 +18,11 @@ const movieSchema = new mongoose.Schema(
       required: true,
     },
     genre: {
-      type: String, // e.g., "Action, Sci-Fi"
+      type: String,
       required: true,
     },
     duration: {
-      type: Number, // in minutes
+      type: Number,
       required: true,
     },
     language: {
@@ -30,14 +37,16 @@ const movieSchema = new mongoose.Schema(
       type: String, 
       required: true,
     },
-    // VIVA TOPIC: Lifecycle Management
+    // New Fields for Cast and Crew
+    cast: [castCrewSchema],
+    crew: [castCrewSchema],
+    
     status: {
       type: String,
       enum: ["UPCOMING", "RUNNING", "ENDED"],
       default: "UPCOMING",
       required: true,
     },
-    // VIVA TOPIC: Soft Delete implementation
     isDeleted: {
       type: Boolean,
       default: false,

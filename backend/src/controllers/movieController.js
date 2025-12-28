@@ -55,7 +55,8 @@ const getMovieById = async (req, res) => {
 // @route   POST /api/movies
 // @access  Private/Admin
 const createMovie = async (req, res) => {
-  const { title, description, genre, duration, language, releaseDate, posterUrl, status } = req.body;
+  // Update 1: Extract cast and crew from req.body
+  const { title, description, genre, duration, language, releaseDate, posterUrl, status, cast, crew } = req.body;
 
   const movie = new Movie({
     title,
@@ -65,7 +66,10 @@ const createMovie = async (req, res) => {
     language,
     releaseDate,
     posterUrl,
-    status
+    status,
+    // Update 2: Include them in object creation
+    cast: cast || [],
+    crew: crew || []
   });
 
   const createdMovie = await movie.save();
@@ -76,7 +80,8 @@ const createMovie = async (req, res) => {
 // @route   PUT /api/movies/:id
 // @access  Private/Admin
 const updateMovie = async (req, res) => {
-  const { title, description, genre, duration, language, releaseDate, posterUrl, status } = req.body;
+  // Update 3: Extract cast and crew here as well
+  const { title, description, genre, duration, language, releaseDate, posterUrl, status, cast, crew } = req.body;
   
   const movie = await Movie.findById(req.params.id);
 
@@ -89,6 +94,10 @@ const updateMovie = async (req, res) => {
     movie.releaseDate = releaseDate || movie.releaseDate;
     movie.posterUrl = posterUrl || movie.posterUrl;
     movie.status = status || movie.status;
+    
+    // Update 4: Update the fields if they exist in the request
+    if (cast) movie.cast = cast;
+    if (crew) movie.crew = crew;
 
     const updatedMovie = await movie.save();
     res.json(updatedMovie);

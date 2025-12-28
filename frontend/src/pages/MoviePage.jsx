@@ -14,7 +14,9 @@ import {
   FaTimes,
   FaSearch,
   FaTheaterMasks,
-  FaChevronRight
+  FaChevronRight,
+  FaUser, 
+  FaVideo
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
@@ -310,16 +312,67 @@ const MoviePage = () => {
         </section>
 
         {/* Cast & Crew */}
+        {/* Cast & Crew Section */}
         <section className="mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
-            Cast & Crew
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
+             <FaUser /> Cast & Crew
           </h2>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-12 shadow-md border border-gray-200 dark:border-gray-700 text-center">
-            <FaTheaterMasks className="text-6xl text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-gray-400 text-lg">
-              Cast and crew information will be available soon
-            </p>
-          </div>
+          
+          {/* Cast */}
+          {movie.cast && movie.cast.length > 0 && (
+            <div className="mb-8">
+               <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 px-1">Top Cast</h3>
+               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                 {movie.cast.map((person, idx) => (
+                   <div key={idx} className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-md hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                     <div className="h-48 overflow-hidden">
+                       <img 
+                         src={person.image} 
+                         alt={person.name} 
+                         className="w-full h-full object-cover"
+                         onError={(e) => {e.target.src = 'https://via.placeholder.com/150?text=No+Image'}}
+                       />
+                     </div>
+                     <div className="p-3 text-center">
+                       <p className="font-bold text-gray-900 dark:text-white text-sm line-clamp-1">{person.name}</p>
+                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">As <span className="text-gray-700 dark:text-gray-300 font-medium">{person.role}</span></p>
+                     </div>
+                   </div>
+                 ))}
+               </div>
+            </div>
+          )}
+
+          {/* Crew */}
+          {movie.crew && movie.crew.length > 0 && (
+             <div>
+               <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 px-1">Crew</h3>
+               <div className="flex flex-wrap gap-4">
+                 {movie.crew.map((person, idx) => (
+                   <div key={idx} className="flex items-center gap-3 bg-white dark:bg-gray-800 pr-4 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm">
+                      <img 
+                         src={person.image} 
+                         alt={person.name} 
+                         className="w-12 h-12 rounded-full object-cover" 
+                      />
+                      <div>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white">{person.name}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{person.role}</p>
+                      </div>
+                   </div>
+                 ))}
+               </div>
+             </div>
+          )}
+
+          {(!movie.cast?.length && !movie.crew?.length) && (
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-12 shadow-md border border-gray-200 dark:border-gray-700 text-center">
+              <FaTheaterMasks className="text-6xl text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-500 dark:text-gray-400 text-lg">
+                Cast and crew information will be available soon
+              </p>
+            </div>
+          )}
         </section>
 
         {/* Reviews */}

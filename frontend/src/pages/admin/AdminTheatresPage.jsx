@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { FaPlus, FaTrash, FaEdit, FaMapMarkerAlt, FaVideo } from 'react-icons/fa';
 import { getTheatres, createTheatre, updateTheatre, deleteTheatre } from '../../services/theatreService';
 import toast from 'react-hot-toast';
-import citiesData from '../../data/cities.json'; // Import the cities data
+import citiesData from '../../data/cities.json';
 
 const AdminTheatresPage = () => {
   const [theatres, setTheatres] = useState([]);
