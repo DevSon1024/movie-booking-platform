@@ -18,10 +18,11 @@ const theatreSchema = new mongoose.Schema({
     type: String, // e.g. ["Dolby Atmos", "Food Court", "Parking"]
   }],
   screens: [{
-    name: { type: String, required: true }, // e.g., "Screen 1", "IMAX Hall"
+    name: { type: String, required: true },
     type: { 
       type: String, 
-      enum: ['Standard', 'IMAX', '3D', '4DX'],
+      // Add the new types to this list
+      enum: ['Standard', 'IMAX', '3D', '4DX', 'Premium', 'Recliner', 'Luxury'],
       default: 'Standard'
     },
     seatLayout: {
