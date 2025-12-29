@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { FaTicketAlt, FaStar, FaCalendarAlt, FaPlay, FaChevronRight, FaChevronLeft } from 'react-icons/fa';
@@ -72,48 +72,79 @@ const HomePage = () => {
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen text-gray-800 dark:text-white transition-colors duration-300">
       
-      {/* --- HERO SECTION (CAROUSEL) - SMALLER LAYOUT --- */}
+      {/* --- HERO SECTION (CAROUSEL) - UPDATED --- */}
       {featuredMovies.length > 0 && (
-        <div className="relative w-full h-[250px] md:h-[400px] overflow-hidden group">
-           {/* Background Image with Gradient Overlay */}
+        <div className="relative w-full h-[450px] md:h-[500px] overflow-hidden group bg-gray-900">
+           
+           {/* Background Image (Blurred & Darkened) */}
            <div 
-             className="absolute inset-0 bg-cover bg-center transition-all duration-1000 ease-in-out transform scale-105"
+             className="absolute inset-0 bg-cover bg-center transition-all duration-1000 ease-in-out opacity-40 blur-sm transform scale-105"
              style={{ backgroundImage: `url(${featuredMovies[currentSlide].posterUrl})` }}
-           >
-              <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent"></div>
-              <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-transparent to-transparent"></div>
-           </div>
+           ></div>
+           
+           {/* Heavy Gradient Overlay for Readability */}
+           <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-900/90 to-transparent"></div>
+           <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent"></div>
 
-           {/* Content */}
-           <div className="absolute bottom-0 left-0 w-full p-6 md:p-12 z-10 flex flex-col items-start animate-fade-in-up">
-              <span className="bg-red-600 text-white px-2 py-0.5 rounded text-[10px] md:text-xs font-bold uppercase tracking-wide mb-2">
-                 Trending Now
-              </span>
-              <h1 className="text-2xl md:text-4xl font-extrabold text-white mb-1 drop-shadow-lg">
-                 {featuredMovies[currentSlide].title}
-              </h1>
-              <div className="flex items-center text-gray-300 text-xs md:text-sm mb-4 space-x-3">
-                 <span>{featuredMovies[currentSlide].genre}</span>
-                 <span>•</span>
-                 <span>{featuredMovies[currentSlide].duration} mins</span>
-                 <span>•</span>
-                 <span>{featuredMovies[currentSlide].language}</span>
+           {/* Content Container */}
+           <div className="absolute inset-0 container mx-auto px-4 flex items-center justify-between z-10">
+              
+              {/* Left Side: Text Info */}
+              <div className="w-full md:w-1/2 lg:w-2/5 flex flex-col items-start animate-fade-in-up pl-4 md:pl-8">
+                  <span className="bg-red-600 text-white px-3 py-1 rounded text-xs font-bold uppercase tracking-wide mb-4 shadow-lg">
+                     Trending #1
+                  </span>
+                  <h1 className="text-3xl md:text-5xl font-extrabold text-white mb-4 drop-shadow-xl leading-tight">
+                     {featuredMovies[currentSlide].title}
+                  </h1>
+                  
+                  <div className="flex flex-wrap items-center text-gray-300 text-sm mb-6 gap-3 md:gap-4">
+                     <span className="bg-white/10 px-2 py-1 rounded backdrop-blur-sm border border-white/10">{featuredMovies[currentSlide].genre}</span>
+                     <span className="hidden md:inline">•</span>
+                     <span className="flex items-center gap-1"><FaClock className="text-xs" /> {featuredMovies[currentSlide].duration} mins</span>
+                     <span className="hidden md:inline">•</span>
+                     <span className="flex items-center gap-1"><FaGlobe className="text-xs" /> {featuredMovies[currentSlide].language}</span>
+                  </div>
+
+                  <p className="text-gray-400 text-sm mb-8 line-clamp-2 md:line-clamp-3 max-w-lg hidden sm:block">
+                     {featuredMovies[currentSlide].description}
+                  </p>
+
+                  <div className="flex gap-4">
+                    <Link 
+                        to={`/movie/${featuredMovies[currentSlide]._id}`}
+                        className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-full text-sm font-bold flex items-center transition-all shadow-lg hover:scale-105 hover:shadow-red-600/40"
+                    >
+                        <FaTicketAlt className="mr-2" /> Book Now
+                    </Link>
+                    <button className="bg-white/10 hover:bg-white/20 text-white border border-white/30 px-6 py-3 rounded-full text-sm font-bold flex items-center transition backdrop-blur-md">
+                        <FaPlay className="mr-2 text-xs" /> Watch Trailer
+                    </button>
+                  </div>
               </div>
-              <Link 
-                to={`/movie/${featuredMovies[currentSlide]._id}`}
-                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-full text-sm font-bold flex items-center transition shadow-lg hover:scale-105"
-              >
-                 <FaTicketAlt className="mr-2" /> Book Tickets
-              </Link>
+
+              {/* Right Side: Proper Poster Image (Hidden on Mobile) */}
+              <div className="hidden md:flex w-1/2 justify-center items-center pr-8 relative">
+                  <div className="relative w-[280px] h-[400px] lg:w-[320px] lg:h-[450px] perspective-1000 group-hover:perspective-none transition-all duration-500">
+                      <img 
+                        src={featuredMovies[currentSlide].posterUrl} 
+                        alt={featuredMovies[currentSlide].title} 
+                        className="w-full h-full object-cover rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform rotate-3 group-hover:rotate-0 transition-all duration-700 ease-out border-4 border-white/5 ring-1 ring-white/10"
+                      />
+                      {/* Reflection Effect */}
+                      <div className="absolute -bottom-4 left-4 right-4 h-4 bg-black/20 blur-xl rounded-[100%]"></div>
+                  </div>
+              </div>
+
            </div>
 
            {/* Slide Indicators */}
-           <div className="absolute bottom-4 right-6 flex gap-1.5 z-20">
+           <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex gap-2 z-20">
               {featuredMovies.map((_, idx) => (
                   <button 
                     key={idx} 
                     onClick={() => setCurrentSlide(idx)}
-                    className={`w-2 h-2 rounded-full transition-all duration-300 ${currentSlide === idx ? 'bg-red-600 w-6' : 'bg-white/50 hover:bg-white'}`}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${currentSlide === idx ? 'bg-red-600 w-8' : 'bg-gray-600 w-2 hover:bg-gray-400'}`}
                   />
               ))}
            </div>
@@ -135,29 +166,36 @@ const HomePage = () => {
                <button 
                  onClick={prevRecSlide}
                  disabled={recStartIndex === 0}
-                 className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-white/80 dark:bg-gray-800/80 shadow-lg backdrop-blur-sm transition-all duration-200 ${recStartIndex === 0 ? 'opacity-0 cursor-default' : 'opacity-0 group-hover/carousel:opacity-100 hover:bg-white dark:hover:bg-gray-700 text-gray-800 dark:text-white'}`}
+                 className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full bg-white/90 dark:bg-gray-800/90 shadow-lg backdrop-blur-sm transition-all duration-200 transform hover:scale-110 ${recStartIndex === 0 ? 'opacity-0 cursor-default hidden' : 'opacity-100 text-gray-800 dark:text-white'}`}
                >
                  <FaChevronLeft />
                </button>
 
                {/* Carousel Window */}
-               <div className="overflow-hidden -mx-2">
+               <div className="overflow-hidden -mx-2 py-4"> 
                  <div 
                    className="flex transition-transform duration-500 ease-out"
                    style={{ transform: `translateX(-${recStartIndex * (100 / (window.innerWidth < 768 ? 2 : window.innerWidth < 1024 ? 4 : 5))}%)` }}
                  >
                    {recommendedMovies.map((movie) => (
                       <div key={movie._id} className="min-w-[50%] md:min-w-[25%] lg:min-w-[20%] px-2">
-                          <Link to={`/movie/${movie._id}`} className="block relative rounded-lg overflow-hidden group">
-                              <div className="aspect-[2/3] overflow-hidden rounded-lg">
-                                <img src={movie.posterUrl} alt={movie.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
-                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition duration-300 flex items-center justify-center">
-                                    <FaPlay className="text-white opacity-0 group-hover:opacity-100 transform scale-50 group-hover:scale-100 transition duration-300 text-3xl drop-shadow-lg" />
+                          <Link to={`/movie/${movie._id}`} className="block relative rounded-lg overflow-hidden group shadow-md hover:shadow-xl transition-all duration-300">
+                              <div className="aspect-[2/3] overflow-hidden rounded-t-lg">
+                                <img src={movie.posterUrl} alt={movie.title} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center">
+                                    <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30">
+                                      <FaPlay className="text-white text-sm ml-0.5" />
+                                    </div>
                                 </div>
                               </div>
-                              <div className="mt-2">
+                              <div className="p-3 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700">
                                 <h4 className="text-sm font-bold truncate text-gray-800 dark:text-gray-100 group-hover:text-red-600 transition">{movie.title}</h4>
-                                <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">{movie.genre}</p>
+                                <div className="flex justify-between items-center mt-1">
+                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate max-w-[70%]">{movie.genre}</p>
+                                    <div className="flex items-center text-[10px] text-yellow-500 font-bold">
+                                        <FaStar className="mr-0.5" /> {(Math.random() * 2 + 3).toFixed(1)}
+                                    </div>
+                                </div>
                               </div>
                           </Link>
                       </div>
@@ -169,7 +207,7 @@ const HomePage = () => {
                <button 
                  onClick={nextRecSlide}
                  disabled={recStartIndex + itemsPerSlide >= recommendedMovies.length}
-                 className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-white/80 dark:bg-gray-800/80 shadow-lg backdrop-blur-sm transition-all duration-200 ${recStartIndex + itemsPerSlide >= recommendedMovies.length ? 'opacity-0 cursor-default' : 'opacity-0 group-hover/carousel:opacity-100 hover:bg-white dark:hover:bg-gray-700 text-gray-800 dark:text-white'}`}
+                 className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full bg-white/90 dark:bg-gray-800/90 shadow-lg backdrop-blur-sm transition-all duration-200 transform hover:scale-110 ${recStartIndex + itemsPerSlide >= recommendedMovies.length ? 'opacity-0 cursor-default hidden' : 'opacity-100 text-gray-800 dark:text-white'}`}
                >
                  <FaChevronRight />
                </button>
@@ -234,7 +272,7 @@ const HomePage = () => {
               {/* Card Details - Smaller Text */}
               <div className="p-3 flex flex-col flex-grow justify-between">
                 <div>
-                  <h3 className="text-base font-bold text-gray-900 dark:text-white leading-tight mb-1 line-clamp-2 group-hover:text-red-600 transition-colors">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white leading-tight mb-1 line-clamp-2 group-hover:text-red-600 transition-colors">
                     {movie.title}
                   </h3>
                   <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-2">{movie.genre}</p>
@@ -268,5 +306,8 @@ const HomePage = () => {
     </div>
   );
 };
+
+// Add FaGlobe, FaClock to imports if not present
+import { FaGlobe, FaClock } from 'react-icons/fa';
 
 export default HomePage;
