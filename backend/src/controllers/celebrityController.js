@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 
 // POINTING TO FRONTEND DATA FOLDER
 // backend/src/controllers/ -> ../../../frontend/src/data/celebrities.json
-const DATA_FILE = path.join(__dirname, '../../../frontend/src/data/celebrities.json');
+const DATA_FILE = path.join(__dirname, '../../data/celebrities.json');
 
 // Ensure directory and file exist
 const ensureFileExists = async () => {

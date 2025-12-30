@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { FaTimes, FaSave, FaPlus, FaTrash } from 'react-icons/fa';
 import toast from 'react-hot-toast';
-import initialCelebritiesData from '../../data/celebrities.json';
+import { getCelebrities } from '../../services/celebrityService'; // Import the service
 import professionsData from '../../data/professions.json';
 
 const MovieForm = ({ initialData, isEditing, onClose, onSubmit }) => {
@@ -13,19 +13,31 @@ const MovieForm = ({ initialData, isEditing, onClose, onSubmit }) => {
     cast: [], crew: []
   });
 
-  // Load initial data if editing
+  // Load initial data and celebrities
   useEffect(() => {
-    const storedCelebs = JSON.parse(localStorage.getItem('celebrities'));
-    setCelebrities(storedCelebs || initialCelebritiesData);
+    const loadData = async () => {
+      // 1. Fetch fresh celebrity data from API to ensure no stale URLs
+      try {
+        const freshCelebrities = await getCelebrities();
+        // Sort alphabetically for easier searching
+        setCelebrities(freshCelebrities.sort((a, b) => a.name.localeCompare(b.name)));
+      } catch (error) {
+        console.error("Failed to load celebrities", error);
+        toast.error("Could not load celebrity list");
+      }
 
-    if (isEditing && initialData) {
-      setFormData({
-        ...initialData,
-        releaseDate: initialData.releaseDate ? initialData.releaseDate.split('T')[0] : '',
-        cast: initialData.cast || [],
-        crew: initialData.crew || []
-      });
-    }
+      // 2. Set Form Data if Editing
+      if (isEditing && initialData) {
+        setFormData({
+          ...initialData,
+          releaseDate: initialData.releaseDate ? initialData.releaseDate.split('T')[0] : '',
+          cast: initialData.cast || [],
+          crew: initialData.crew || []
+        });
+      }
+    };
+
+    loadData();
   }, [initialData, isEditing]);
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -35,9 +47,14 @@ const MovieForm = ({ initialData, isEditing, onClose, onSubmit }) => {
     onSubmit(formData);
   };
 
-  // --- Helper: Cast/Crew Logic (Inline for simplicity in this file) ---
+  // --- Helper: Cast/Crew Logic ---
   const addToMovie = (celeb, type, role) => {
     if(!role) return toast.error(type === 'cast' ? "Enter character name" : "Enter job title");
+    
+    // Check if already added
+    const exists = formData[type].some(item => item.name === celeb.name);
+    if(exists) return toast.error(`${celeb.name} is already added`);
+
     setFormData(prev => ({
       ...prev,
       [type]: [...prev[type], { name: celeb.name, image: celeb.image, role }]
@@ -157,38 +174,80 @@ const MovieForm = ({ initialData, isEditing, onClose, onSubmit }) => {
 const CastCrewSelector = ({ type, data, celebrities, professions, onAdd, onRemove }) => {
   const [search, setSearch] = useState('');
   const [role, setRole] = useState('');
-  const filtered = celebrities.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
+  
+  // Filter celebrities based on search
+  const filtered = celebrities.filter(c => 
+    c.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
-        <input placeholder="Search Celebrity..." className="flex-1 p-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" value={search} onChange={e=>setSearch(e.target.value)} />
-        <input placeholder={type==='cast' ? "Role (Character)" : "Job (e.g. Director)"} className="flex-1 p-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" value={role} onChange={e=>setRole(e.target.value)} />
+        <input 
+          placeholder="Search Celebrity..." 
+          className="flex-1 p-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none" 
+          value={search} 
+          onChange={e=>setSearch(e.target.value)} 
+        />
+        <input 
+          placeholder={type==='cast' ? "Role (Character)" : "Job (e.g. Director)"} 
+          className="flex-1 p-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none" 
+          value={role} 
+          onChange={e=>setRole(e.target.value)} 
+        />
       </div>
       
+      {/* Search Dropdown */}
       {search && (
-        <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto bg-gray-50 dark:bg-gray-900 p-2 rounded">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-60 overflow-y-auto bg-white dark:bg-gray-900 border dark:border-gray-700 p-2 rounded shadow-lg">
           {filtered.map(c => (
-            <div key={c.id} onClick={()=>{onAdd(c, type, role); setSearch(''); setRole('');}} className="flex items-center gap-2 p-2 hover:bg-white dark:hover:bg-gray-700 cursor-pointer rounded">
-              <img src={c.image} className="w-8 h-8 rounded-full" alt="" />
-              <span className="text-sm dark:text-white">{c.name}</span>
+            <div 
+              key={c.id} 
+              onClick={()=>{onAdd(c, type, role); setSearch(''); setRole('');}} 
+              className="flex items-center gap-3 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer rounded transition border border-transparent hover:border-gray-200 dark:hover:border-gray-700"
+            >
+              <img 
+                src={c.image} 
+                className="w-10 h-10 rounded-full object-cover bg-gray-200" 
+                alt={c.name}
+                referrerPolicy="no-referrer"
+                onError={(e) => { e.target.src = "https://via.placeholder.com/150?text=No+Img"; }}
+              />
+              <span className="text-sm font-medium dark:text-white">{c.name}</span>
               <FaPlus className="ml-auto text-green-500" />
             </div>
           ))}
+          {filtered.length === 0 && (
+             <div className="p-2 text-gray-500 text-sm text-center col-span-full">No results found.</div>
+          )}
         </div>
       )}
 
+      {/* Added List */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {data.map((item, idx) => (
-          <div key={idx} className="flex items-center gap-3 p-2 border rounded dark:border-gray-600 bg-white dark:bg-gray-700">
-            <img src={item.image} className="w-10 h-10 rounded object-cover" alt="" />
+          <div key={idx} className="flex items-center gap-3 p-2 border rounded dark:border-gray-600 bg-white dark:bg-gray-700 shadow-sm">
+            <img 
+              src={item.image} 
+              className="w-10 h-10 rounded object-cover bg-gray-200" 
+              alt={item.name}
+              referrerPolicy="no-referrer"
+              onError={(e) => { e.target.src = "https://via.placeholder.com/150?text=No+Img"; }}
+            />
             <div className="flex-1 overflow-hidden">
               <p className="font-bold text-sm truncate dark:text-white">{item.name}</p>
               <p className="text-xs text-gray-500 dark:text-gray-300 truncate">{item.role}</p>
             </div>
-            <button type="button" onClick={()=>onRemove(idx, type)} className="text-red-500"><FaTrash size={12}/></button>
+            <button type="button" onClick={()=>onRemove(idx, type)} className="text-red-500 hover:text-red-700 p-1">
+              <FaTrash size={14}/>
+            </button>
           </div>
         ))}
+        {data.length === 0 && !search && (
+           <div className="col-span-full text-center py-8 text-gray-400 border-2 border-dashed rounded-lg">
+             No {type} members added yet. Search above to add.
+           </div>
+        )}
       </div>
     </div>
   );
