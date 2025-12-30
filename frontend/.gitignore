@@ -8,7 +8,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 src/data/celebrities.json
-
+src/data/removeProffession.cjs
 node_modules
 dist
 dist-ssr

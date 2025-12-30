@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { FaEdit, FaTrash, FaPlus, FaSearch, FaUserTie } from 'react-icons/fa';
 import { getAdminMovies, createMovie, updateMovie, deleteMovie } from '../../services/movieService';
 import toast from 'react-hot-toast';
-import MovieForm from '../../components/admin/MovieForm'; // Import the new form
+import MovieForm from '../../components/admin/MovieForm';
+import ManageCelebrities from '../../components/admin/ManageCelebrities'; // Import new component
 
 const AdminMoviesPage = () => {
   const [movies, setMovies] = useState([]);
@@ -11,6 +12,7 @@ const AdminMoviesPage = () => {
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCelebrityModalOpen, setIsCelebrityModalOpen] = useState(false); // New State
   const [editingMovie, setEditingMovie] = useState(null);
 
   useEffect(() => { 
@@ -70,9 +72,15 @@ const AdminMoviesPage = () => {
           <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Movies</h1>
           <p className="text-gray-500 dark:text-gray-400">Manage your movie catalog</p>
         </div>
-        <button onClick={handleOpenAdd} className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg shadow-lg flex items-center font-semibold transition transform hover:scale-105">
-          <FaPlus className="mr-2" /> Add Movie
-        </button>
+        <div className="flex gap-3">
+            {/* New Button for Celebrities */}
+            <button onClick={() => setIsCelebrityModalOpen(true)} className="bg-gray-800 hover:bg-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white px-5 py-2.5 rounded-lg shadow-lg flex items-center font-semibold transition transform hover:scale-105">
+            <FaUserTie className="mr-2" /> Manage Celebrities
+            </button>
+            <button onClick={handleOpenAdd} className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg shadow-lg flex items-center font-semibold transition transform hover:scale-105">
+            <FaPlus className="mr-2" /> Add Movie
+            </button>
+        </div>
       </div>
 
       {/* Search */}
@@ -87,7 +95,7 @@ const AdminMoviesPage = () => {
         />
       </div>
 
-      {/* Movies Grid (Replaced List View for better Visuals) */}
+      {/* Movies Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {movies.map(m => (
           <div key={m._id} className="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700">
@@ -114,13 +122,20 @@ const AdminMoviesPage = () => {
         ))}
       </div>
 
-      {/* Modal Form */}
+      {/* Existing Movie Modal */}
       {isModalOpen && (
         <MovieForm 
           isEditing={!!editingMovie}
           initialData={editingMovie}
           onClose={() => setIsModalOpen(false)}
           onSubmit={handleFormSubmit}
+        />
+      )}
+
+      {/* New Celebrity Modal */}
+      {isCelebrityModalOpen && (
+        <ManageCelebrities 
+          onClose={() => setIsCelebrityModalOpen(false)}
         />
       )}
     </div>
