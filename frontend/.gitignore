@@ -7,7 +7,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-src/data/celebrities.json
+data/celebrities.json
 src/data/removeProffession.cjs
 node_modules
 dist
