@@ -5,29 +5,19 @@ import { fileURLToPath } from 'url';
 // Helper to get file path
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const DATA_FILE = path.join(__dirname, '../data/celebrities.json');
+
+// POINTING TO FRONTEND DATA FOLDER
+// backend/src/controllers/ -> ../../../frontend/src/data/celebrities.json
+const DATA_FILE = path.join(__dirname, '../../../frontend/src/data/celebrities.json');
 
 // Ensure directory and file exist
 const ensureFileExists = async () => {
   try {
     await fs.access(DATA_FILE);
   } catch {
-    const dir = path.dirname(DATA_FILE);
-    await fs.mkdir(dir, { recursive: true });
-    // Create initial data if file doesn't exist
-    const initialData = [
-      {
-        "id": "200",
-        "name": "Anu Malik",
-        "image": "https://upload.wikimedia.org/wikipedia/commons/6/6e/Anu_Malik_at_Indian_Idol_10_launch.jpg"
-      },
-      {
-        "id": "201",
-        "name": "Vikrant Massey",
-        "image": "https://upload.wikimedia.org/wikipedia/commons/2/29/Vikrant_Massey_in_the_closing_ceremony_of_IFFI_2025_%28cropped%29.jpg"
-      }
-    ];
-    await fs.writeFile(DATA_FILE, JSON.stringify(initialData, null, 2));
+    // If file doesn't exist, we can't really create it in the frontend folder 
+    // without the folder structure, but assuming the user said it exists.
+    throw new Error('Celebrities data file not found at: ' + DATA_FILE);
   }
 };
 
@@ -37,7 +27,8 @@ export const getCelebrities = async (req, res) => {
     const data = await fs.readFile(DATA_FILE, 'utf-8');
     res.json(JSON.parse(data));
   } catch (error) {
-    res.status(500).json({ message: 'Error reading data' });
+    console.error(error);
+    res.status(500).json({ message: 'Error reading data file' });
   }
 };
 
@@ -57,8 +48,12 @@ export const addCelebrity = async (req, res) => {
       return res.status(400).json({ message: 'Celebrity already exists' });
     }
 
-    // Generate Next ID
-    const maxId = celebrities.reduce((max, c) => Math.max(max, parseInt(c.id || 0)), 0);
+    // Generate Next ID (Handling String IDs)
+    const maxId = celebrities.reduce((max, c) => {
+        const currentId = parseInt(c.id);
+        return !isNaN(currentId) && currentId > max ? currentId : max;
+    }, 0);
+    
     const newId = (maxId + 1).toString();
 
     const newCelebrity = { id: newId, name, image };
@@ -67,6 +62,7 @@ export const addCelebrity = async (req, res) => {
     await fs.writeFile(DATA_FILE, JSON.stringify(celebrities, null, 2));
     res.status(201).json(newCelebrity);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Error saving data' });
   }
 };
