@@ -55,8 +55,8 @@ const Navbar = () => {
       if (searchTerm.trim()) {
         setIsSearching(true);
         try {
-            // Fetch all active movies and filter client-side for better UX
-            const { data } = await api.get('/movies');
+            // Fetch all movies including ENDED status for search
+            const { data } = await api.get('/movies?includeAll=true');
             const filtered = data.filter(movie => 
                 movie.title.toLowerCase().includes(searchTerm.toLowerCase())
             ).slice(0, 5); // Limit to 5 results
@@ -64,6 +64,7 @@ const Navbar = () => {
             setShowResults(true);
         } catch (error) {
             console.error("Search failed", error);
+            setSearchResults([]);
         } finally {
             setIsSearching(false);
         }
@@ -71,7 +72,7 @@ const Navbar = () => {
         setSearchResults([]);
         setShowResults(false);
       }
-    }, 500); // 500ms wait time after stopping typing
+    }, 500);
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm]);
@@ -121,9 +122,22 @@ const Navbar = () => {
                                 className="px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-3 transition"
                             >
                                 <img src={movie.posterUrl} alt={movie.title} className="w-8 h-10 object-cover rounded bg-gray-200" />
-                                <div>
+                                <div className="flex-1">
                                     <p className="text-sm font-bold text-gray-800 dark:text-white">{movie.title}</p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">{movie.genre} • {new Date(movie.releaseDate).getFullYear()}</p>
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                            {movie.genre} • {new Date(movie.releaseDate).getFullYear()}
+                                        </p>
+                                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                                            movie.status === 'RUNNING' 
+                                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                                : movie.status === 'UPCOMING'
+                                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                                                : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                                        }`}>
+                                            {movie.status}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         ))}

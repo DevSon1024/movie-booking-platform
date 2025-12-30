@@ -4,14 +4,26 @@ import Movie from '../models/Movie.js';
 // @route   GET /api/movies
 // @access  Public
 const getMovies = async (req, res) => {
-  // Public only sees UPCOMING or RUNNING, and NOT deleted
-  const movies = await Movie.find({
-    status: { $in: ['UPCOMING', 'RUNNING'] },
-    isDeleted: false
-  }).sort({ createdAt: -1 });
+  const { includeAll, search } = req.query;
+  
+  let query = { isDeleted: false };
+  
+  // If includeAll is true, show all statuses (for search)
+  if (!includeAll) {
+    // Default behavior: only show UPCOMING and RUNNING
+    query.status = { $in: ['UPCOMING', 'RUNNING'] };
+  }
+  
+  // If search query is provided
+  if (search) {
+    query.title = { $regex: search, $options: 'i' };
+  }
+  
+  const movies = await Movie.find(query).sort({ createdAt: -1 });
   
   res.json(movies);
 };
+
 
 // @desc    Fetch ALL movies with filters (Admin)
 // @route   GET /api/movies/all

@@ -1,12 +1,24 @@
 import express from 'express';
-import { createReview, getMovieReviews } from '../controllers/reviewController.js';
+import { 
+  createReview, 
+  getMovieReviews, 
+  updateReview, 
+  deleteReview, 
+  getMyReviews,
+  canReviewMovie 
+} from '../controllers/reviewController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
-router.route('/')
-  .post(protect, createReview);
+// Public routes
+router.get('/movie/:movieId', getMovieReviews);
 
-router.get('/:movieId', getMovieReviews);
+// Protected routes
+router.post('/', protect, createReview);
+router.get('/my-reviews', protect, getMyReviews);
+router.get('/can-review/:movieId', protect, canReviewMovie);
+router.put('/:reviewId', protect, updateReview);
+router.delete('/:reviewId', protect, deleteReview);
 
 export default router;

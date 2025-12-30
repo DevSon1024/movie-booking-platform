@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import api from '../services/api';
 import { getShows } from '../services/showService';
 import citiesData from '../data/cities.json';
+import Reviews from '../components/Reviews';
 import { 
   FaClock, 
   FaMapMarkerAlt, 
@@ -13,8 +14,6 @@ import {
   FaTicketAlt,
   FaTimes,
   FaSearch,
-  FaTheaterMasks,
-  FaChevronRight,
   FaUser, 
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
@@ -40,7 +39,7 @@ const MoviePage = () => {
   const searchRef = useRef(null);
 
   useEffect(() => {
-    // FIX: Scroll to top immediately when ID changes or component mounts
+    // Scroll to top immediately when ID changes or component mounts
     window.scrollTo(0, 0);
     
     fetchData();
@@ -208,7 +207,7 @@ const MoviePage = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
       
-      {/* Hero Section with Movie Info - COMPACT */}
+      {/* Hero Section with Movie Info */}
       <div className="relative bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-black dark:via-gray-900 dark:to-black overflow-hidden">
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 opacity-30">
@@ -232,7 +231,7 @@ const MoviePage = () => {
           </button>
 
           <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-center md:items-start">
-            {/* Movie Poster - Smaller */}
+            {/* Movie Poster */}
             <div className="flex-shrink-0 group perspective-1000">
               <img 
                 src={movie.posterUrl} 
@@ -241,7 +240,7 @@ const MoviePage = () => {
               />
             </div>
 
-            {/* Movie Details - Compact */}
+            {/* Movie Details */}
             <div className="flex-1 text-white text-center md:text-left">
               <h1 className="text-3xl md:text-4xl font-extrabold mb-3 tracking-tight">
                 {movie.title}
@@ -251,15 +250,12 @@ const MoviePage = () => {
               <div className="flex items-center justify-center md:justify-start gap-3 mb-5">
                 <div className="bg-white/10 backdrop-blur-md px-3 py-1 rounded-md flex items-center gap-1.5 border border-white/10">
                   <FaStar className="text-yellow-400 text-sm" />
-                  <span className="font-bold text-sm">9.3/10</span>
-                  <span className="text-gray-400 text-xs hidden sm:inline">(235K votes)</span>
+                  <span className="font-bold text-sm">8.5/10</span>
+                  <span className="text-gray-400 text-xs hidden sm:inline">(View Reviews)</span>
                 </div>
-                <button className="text-xs bg-white text-gray-900 hover:bg-gray-200 px-3 py-1 rounded-md font-bold transition-all">
-                  Rate
-                </button>
               </div>
 
-              {/* Movie Meta Info - Smaller Pills */}
+              {/* Movie Meta Info */}
               <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-6">
                 <div className="bg-gray-800/80 px-3 py-1 rounded text-xs border border-gray-700">
                   <span className="font-medium text-gray-200">{movie.genre}</span>
@@ -310,7 +306,7 @@ const MoviePage = () => {
               </div>
             </section>
 
-            {/* Cast & Crew - SMALLER CARDS */}
+            {/* Cast & Crew */}
             <section>
               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                  <FaUser className="text-red-500" /> Cast
@@ -320,7 +316,7 @@ const MoviePage = () => {
               {movie.cast && movie.cast.length > 0 ? (
                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
                    {movie.cast.map((person, idx) => (
-                     <div key={idx} className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm hover:shadow-md border border-gray-100 dark:border-gray-800 transition-all group">
+                     <div key={`cast-${idx}`} className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm hover:shadow-md border border-gray-100 dark:border-gray-800 transition-all group">
                        <div className="h-32 sm:h-40 overflow-hidden">
                          <img 
                            src={person.image} 
@@ -346,7 +342,7 @@ const MoviePage = () => {
                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">Crew</h3>
                    <div className="flex flex-wrap gap-3">
                      {movie.crew.map((person, idx) => (
-                       <div key={idx} className="flex items-center gap-2 bg-white dark:bg-gray-800 pr-3 rounded-full border border-gray-100 dark:border-gray-700 shadow-sm p-1">
+                       <div key={`crew-${idx}`} className="flex items-center gap-2 bg-white dark:bg-gray-800 pr-3 rounded-full border border-gray-100 dark:border-gray-700 shadow-sm p-1">
                           <img 
                              src={person.image} 
                              alt={person.name} 
@@ -364,16 +360,44 @@ const MoviePage = () => {
             </section>
           </div>
 
-          {/* Right Column: Reviews/Offers (Placeholder) */}
+          {/* Right Column: Movie Info */}
           <div className="lg:col-span-1">
              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 sticky top-24">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Reviews</h3>
-                <div className="text-center py-8">
-                  <FaStar className="text-4xl text-yellow-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-                     User reviews coming soon.
-                  </p>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Movie Info</h3>
+                
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 dark:text-gray-400">Release Date</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {new Date(movie.releaseDate).toLocaleDateString('en-US', { 
+                        month: 'long', 
+                        day: 'numeric', 
+                        year: 'numeric' 
+                      })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 dark:text-gray-400">Duration</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">{formatRuntime(movie.duration)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 dark:text-gray-400">Language</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">{movie.language}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 dark:text-gray-400">Status</span>
+                    <span className={`font-semibold px-2 py-0.5 rounded text-xs ${
+                      movie.status === 'RUNNING' 
+                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                        : movie.status === 'UPCOMING'
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                        : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                    }`}>
+                      {movie.status}
+                    </span>
+                  </div>
                 </div>
+
                 <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
                     <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">Applicable Offers</h4>
                     <div className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs p-3 rounded border border-green-100 dark:border-green-900/30 border-dashed">
@@ -384,9 +408,15 @@ const MoviePage = () => {
           </div>
 
         </div>
+
+        {/* Reviews Section */}
+        <div className="mt-12">
+          <Reviews movieId={id} movieStatus={movie.status} />
+        </div>
+
       </div>
 
-      {/* Booking Modal (Kept functionality, minor styling tweaks) */}
+      {/* Booking Modal */}
       {showBookingModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 overflow-y-auto flex items-center justify-center p-4">
             <div className="w-full max-w-5xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
@@ -434,7 +464,7 @@ const MoviePage = () => {
                         <div className="absolute z-10 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl mt-1 max-h-40 overflow-y-auto">
                           {citySuggestions.map((item, index) => (
                             <button
-                              key={`${item.city}-${index}`}
+                              key={`suggestion-${item.city}-${index}`}
                               onClick={() => selectCityFromSuggestion(item.city)}
                               className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs flex justify-between border-b border-gray-100 dark:border-gray-600 last:border-0"
                             >
@@ -458,9 +488,9 @@ const MoviePage = () => {
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                        {filteredAvailableCities.map(city => (
+                        {filteredAvailableCities.map((city, idx) => (
                           <button
-                            key={city}
+                            key={`city-${city}-${idx}`}
                             onClick={() => { setSelectedCity(city); setSearchCity(''); }}
                             className="bg-gray-50 dark:bg-gray-700 hover:bg-white dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 hover:border-red-500 dark:hover:border-red-500 rounded-lg p-3 transition-all text-center"
                           >
@@ -491,9 +521,9 @@ const MoviePage = () => {
                     {/* Date Selection */}
                     <div className="mb-6">
                       <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
-                        {availableDates.map(date => (
+                        {availableDates.map((date, idx) => (
                           <button
-                            key={date}
+                            key={`date-${date}-${idx}`}
                             onClick={() => setSelectedDate(date)}
                             className={`px-4 py-2 rounded-lg whitespace-nowrap transition-all text-xs font-bold border ${
                               selectedDate === date
@@ -514,9 +544,9 @@ const MoviePage = () => {
                            <p className="text-sm text-gray-500">No shows available for this date.</p>
                         </div>
                       ) : (
-                        theatreList.map(theatre => (
+                        theatreList.map((theatre, idx) => (
                           <div 
-                            key={theatre._id}
+                            key={`theatre-${theatre._id}-${idx}`}
                             className="bg-white dark:bg-gray-700/40 rounded-lg p-4 border border-gray-100 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 transition-colors"
                           >
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-1">
@@ -534,9 +564,9 @@ const MoviePage = () => {
                               {theatre.shows
                                 .filter(show => show.status === 'active')
                                 .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
-                                .map(show => (
+                                .map((show, showIdx) => (
                                   <button
-                                    key={show._id}
+                                    key={`show-${show._id}-${showIdx}`}
                                     onClick={() => handleShowtimeClick(show._id)}
                                     className="group relative bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:border-green-500 dark:hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded px-4 py-2 transition-all min-w-[90px]"
                                   >
