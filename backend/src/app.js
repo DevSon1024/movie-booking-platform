@@ -12,6 +12,7 @@ import bookingRoutes from './routes/bookingRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
+import celebrityRoutes from './routes/celebrityRoutes.js'; // IMPORTED
 
 // Import error middleware
 import { notFound, errorHandler } from './middlewares/errorMiddleware.js';
@@ -37,6 +38,7 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/celebrities', celebrityRoutes); // REGISTERED
 
 // Health check
 app.get('/', (req, res) => {
