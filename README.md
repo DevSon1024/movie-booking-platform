@@ -42,7 +42,7 @@
 
 1.  **Clone the Repository**
     ```bash
-    git clone https://github.com/yourusername/movie-booking-platform.git
+    git clone https://github.com/DevSon1024/movie-booking-platform.git
     cd movie-booking-platform
     ```
 
