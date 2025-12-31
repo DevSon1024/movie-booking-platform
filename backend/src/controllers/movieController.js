@@ -6,24 +6,48 @@ import Movie from '../models/Movie.js';
 const getMovies = async (req, res) => {
   const { includeAll, search } = req.query;
   
-  let query = { isDeleted: false };
+  let matchStage = { isDeleted: false };
   
-  // If includeAll is true, show all statuses (for search)
   if (!includeAll) {
-    // Default behavior: only show UPCOMING and RUNNING
-    query.status = { $in: ['UPCOMING', 'RUNNING'] };
+    matchStage.status = { $in: ['UPCOMING', 'RUNNING'] };
   }
   
-  // If search query is provided
   if (search) {
-    query.title = { $regex: search, $options: 'i' };
+    matchStage.title = { $regex: search, $options: 'i' };
   }
   
-  const movies = await Movie.find(query).sort({ createdAt: -1 });
-  
-  res.json(movies);
+  try {
+    const movies = await Movie.aggregate([
+      { $match: matchStage },
+      {
+        $lookup: {
+          from: 'reviews',
+          localField: '_id',
+          foreignField: 'movie',
+          as: 'reviews'
+        }
+      },
+      {
+        $addFields: {
+          averageRating: { 
+            $cond: { 
+              if: { $gt: [{ $size: "$reviews" }, 0] }, 
+              then: { $avg: "$reviews.rating" }, 
+              else: 0 
+            } 
+          },
+          reviewCount: { $size: "$reviews" }
+        }
+      },
+      { $project: { reviews: 0 } },
+      { $sort: { createdAt: -1 } }
+    ]);
+    
+    res.json(movies);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
-
 
 // @desc    Fetch ALL movies with filters (Admin)
 // @route   GET /api/movies/all
@@ -31,16 +55,13 @@ const getMovies = async (req, res) => {
 const getAllMoviesAdmin = async (req, res) => {
   const { keyword, sort } = req.query;
 
-  // Base query: Not deleted (Soft delete check)
   let query = { isDeleted: false };
 
-  // Search logic
   if (keyword) {
     query.title = { $regex: keyword, $options: 'i' };
   }
 
-  // Sort logic
-  let sortOption = { createdAt: -1 }; // Default: Latest
+  let sortOption = { createdAt: -1 }; 
   if (sort === 'oldest') {
     sortOption = { createdAt: 1 };
   }
@@ -67,7 +88,6 @@ const getMovieById = async (req, res) => {
 // @route   POST /api/movies
 // @access  Private/Admin
 const createMovie = async (req, res) => {
-  // Update 1: Extract cast and crew from req.body
   const { title, description, genre, duration, language, releaseDate, posterUrl, status, cast, crew } = req.body;
 
   const movie = new Movie({
@@ -79,7 +99,6 @@ const createMovie = async (req, res) => {
     releaseDate,
     posterUrl,
     status,
-    // Update 2: Include them in object creation
     cast: cast || [],
     crew: crew || []
   });
@@ -92,7 +111,6 @@ const createMovie = async (req, res) => {
 // @route   PUT /api/movies/:id
 // @access  Private/Admin
 const updateMovie = async (req, res) => {
-  // Update 3: Extract cast and crew here as well
   const { title, description, genre, duration, language, releaseDate, posterUrl, status, cast, crew } = req.body;
   
   const movie = await Movie.findById(req.params.id);
@@ -107,7 +125,6 @@ const updateMovie = async (req, res) => {
     movie.posterUrl = posterUrl || movie.posterUrl;
     movie.status = status || movie.status;
     
-    // Update 4: Update the fields if they exist in the request
     if (cast) movie.cast = cast;
     if (crew) movie.crew = crew;
 
@@ -126,7 +143,6 @@ const deleteMovie = async (req, res) => {
   const movie = await Movie.findById(req.params.id);
 
   if (movie) {
-    // Soft delete: Mark as deleted instead of removing document
     movie.isDeleted = true;
     await movie.save();
     res.json({ message: 'Movie removed' });

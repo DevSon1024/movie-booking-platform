@@ -12,11 +12,12 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import ProfilePage from "./pages/ProfilePage";
 import MoviePage from "./pages/MoviePage";
 import BookingPage from "./pages/BookingPage";
+import MyReviews from "./pages/MyReviews"; // New Import
 
 // Admin Imports
 import AdminRoute from './routes/AdminRoute';
-import AdminDashboard from './pages/admin/AdminDashboard'; // Layout
-import AdminOverview from './pages/admin/AdminOverview';   // Stats (New)
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminOverview from './pages/admin/AdminOverview';
 import AdminMoviesPage from './pages/admin/AdminMoviesPage';
 import AdminTheatresPage from './pages/admin/AdminTheatresPage'; 
 import AdminShowsPage from './pages/admin/AdminShowsPage';
@@ -30,7 +31,6 @@ function App() {
   }, [dispatch]);
 
   return (
-    // Default background matches theme
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-sans transition-colors duration-300">
       <Navbar />
 
@@ -50,14 +50,12 @@ function App() {
             }
           />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          <Route path="/my-reviews" element={<ProtectedRoute><MyReviews /></ProtectedRoute>} />
 
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminRoute />}>
-            {/* AdminDashboard acts as the Layout (Sidebar) */}
             <Route element={<AdminDashboard />}>
-              {/* Index route shows Stats */}
               <Route index element={<AdminOverview />} />
-              
               <Route path="movies" element={<AdminMoviesPage />} />
               <Route path="theatres" element={<AdminTheatresPage />} />
               <Route path="shows" element={<AdminShowsPage />} />
