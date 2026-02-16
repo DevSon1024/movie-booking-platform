@@ -34,13 +34,14 @@ const AdminDashboard = () => {
         />
       )}
 
-      {/* Sidebar Navigation - Desktop: Sticky Icon-based, Mobile: Slide-over */}
+      {/* Sidebar Navigation - Desktop: Fixed Icon-based, Mobile: Slide-over */}
       <aside 
         className={`
-          fixed md:sticky md:top-0 inset-y-0 left-0 z-40 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 
-          transform transition-all duration-300 ease-in-out flex-shrink-0 h-screen md:h-[calc(100vh-64px)] flex flex-col
+          fixed inset-y-0 left-0 z-40 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 
+          transform transition-all duration-300 ease-in-out flex-shrink-0 flex flex-col
           ${isSidebarOpen ? 'translate-x-0 w-64' : '-translate-x-full w-64'} 
           md:translate-x-0 ${isExpanded ? 'md:w-64' : 'md:w-20'}
+          md:top-20 md:h-[calc(100vh-5rem)]
         `}
       >
         {/* Header */}
@@ -101,7 +102,7 @@ const AdminDashboard = () => {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col h-full w-full overflow-hidden">
+      <main className={`flex-1 flex flex-col h-full w-full overflow-hidden transition-all duration-300 ${isExpanded ? 'md:ml-64' : 'md:ml-20'}`}>
         
         {/* Mobile Header / Menu Toggle */}
         <div className="md:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between sticky top-0 z-20">

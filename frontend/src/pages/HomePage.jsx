@@ -8,6 +8,7 @@ const HomePage = () => {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('ALL');
+  const [showAll, setShowAll] = useState(false);
   
   // Carousel states
   const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
@@ -73,7 +74,7 @@ const HomePage = () => {
         <FaStar className="text-yellow-400" /> {rating.toFixed(1)}/5
       </span>
     ) : (
-      <span className="text-gray-400 italic text-xs">Rating not given yet</span>
+      <span className="text-gray-400 italic text-xs">No Rating</span>
     );
   };
 
@@ -234,7 +235,10 @@ const HomePage = () => {
               {['ALL', 'RUNNING', 'UPCOMING'].map((status) => (
                   <button 
                     key={status}
-                    onClick={() => setFilter(status)}
+                    onClick={() => {
+                      setFilter(status);
+                      setShowAll(false);
+                    }}
                     className={`px-6 py-2 rounded-full text-sm font-bold transition-all duration-200 ${
                         filter === status 
                         ? 'bg-red-600 text-white shadow-md' 
@@ -247,8 +251,8 @@ const HomePage = () => {
            </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-          {filteredMovies.map((movie) => (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6">
+          {(showAll ? filteredMovies : filteredMovies.slice(0, 10)).map((movie) => (
             <Link 
               to={`/movie/${movie._id}`} 
               key={movie._id} 
@@ -266,20 +270,21 @@ const HomePage = () => {
                 </div>
               </div>
               
-              <div className="p-4 flex flex-col flex-grow justify-between">
+              <div className="p-3 sm:p-4 flex flex-col flex-grow justify-between">
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white leading-tight mb-2 line-clamp-2 group-hover:text-red-600 transition-colors">
+                  <h3 className="text-sm sm:text-lg font-bold text-gray-900 dark:text-white leading-tight mb-1 sm:mb-2 line-clamp-2 group-hover:text-red-600 transition-colors">
                     {movie.title}
                   </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wider font-semibold">{movie.genre}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 sm:mb-3 uppercase tracking-wider font-semibold">{movie.genre}</p>
                 </div>
                 
-                <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
-                    <div className="flex items-center text-gray-500 dark:text-gray-400 text-sm">
-                       <FaCalendarAlt className="mr-2" />
-                       {new Date(movie.releaseDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                <div className="flex items-center justify-between pt-2 sm:pt-3 border-t border-gray-100 dark:border-gray-700">
+                    <div className="flex items-center text-gray-500 dark:text-gray-400 text-xs sm:text-sm">
+                       <FaCalendarAlt className="mr-1 sm:mr-2" />
+                       <span className="hidden sm:inline">{new Date(movie.releaseDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                       <span className="sm:hidden">{new Date(movie.releaseDate).toLocaleDateString(undefined, { month: 'short' })}</span>
                     </div>
-                    <div className="text-sm font-bold">
+                    <div className="text-xs sm:text-sm font-bold">
                        {getRatingDisplay(movie.averageRating)}
                     </div>
                 </div>
@@ -287,6 +292,28 @@ const HomePage = () => {
             </Link>
           ))}
         </div>
+
+        {/* Show More / Show Less Button */}
+        {filteredMovies.length > 4 && (
+          <div className="flex justify-center mt-8">
+            <button
+              onClick={() => setShowAll(!showAll)}
+              className="px-8 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 group"
+            >
+              {showAll ? (
+                <>
+                  Show Less
+                  <FaChevronLeft className="group-hover:-translate-x-1 transition-transform" />
+                </>
+              ) : (
+                <>
+                  Show More
+                  <FaChevronRight className="group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
+            </button>
+          </div>
+        )}
 
         {filteredMovies.length === 0 && (
             <div className="flex flex-col items-center justify-center py-24 text-center">
