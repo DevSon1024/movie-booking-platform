@@ -172,6 +172,10 @@ const Navbar = () => {
                       )}
                       
                       <Link to="/profile" className="flex items-center px-5 py-3 text-base text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700" onClick={() => setIsProfileOpen(false)}>
+                        <FaUserCircle className="mr-3 text-gray-400" /> My Profile
+                      </Link>
+                      
+                      <Link to="/profile" className="flex items-center px-5 py-3 text-base text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700" onClick={() => setIsProfileOpen(false)}>
                         <FaHistory className="mr-3 text-gray-400" /> My Tickets
                       </Link>
                       
@@ -229,6 +233,9 @@ const Navbar = () => {
                    <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Account</p>
                 </div>
 
+                <Link to="/profile" onClick={() => setIsMobileOpen(false)} className="flex items-center px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 text-base">
+                  <FaUserCircle className="mr-3" /> My Profile
+                </Link>
                 <Link to="/profile" onClick={() => setIsMobileOpen(false)} className="flex items-center px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 text-base">
                   <FaHistory className="mr-3" /> My Tickets
                 </Link>

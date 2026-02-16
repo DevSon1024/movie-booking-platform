@@ -5,6 +5,7 @@ import { useDispatch } from "react-redux";
 import { getSettings } from "./redux/slices/settingsSlice";
 
 import Navbar from "./components/Navbar";
+import ProfileCompletionPrompt from "./components/ProfileCompletionPrompt";
 
 // Lazy load all page components
 const HomePage = lazy(() => import("./pages/HomePage"));
@@ -83,6 +84,7 @@ function App() {
       </Suspense>
       </main>
 
+      <ProfileCompletionPrompt />
       <Toaster position="bottom-right" />
     </div>
   );

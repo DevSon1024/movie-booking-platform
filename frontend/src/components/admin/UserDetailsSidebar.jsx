@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { FaTimes, FaTicketAlt, FaSpinner, FaCalendarAlt, FaMapMarkerAlt, FaMoneyBillWave, FaChartLine } from 'react-icons/fa';
+import { FaTimes, FaTicketAlt, FaSpinner, FaCalendarAlt, FaMapMarkerAlt, FaMoneyBillWave, FaChartLine, FaStar } from 'react-icons/fa';
 import { getUserDetails, getUserStats } from '../../services/userService';
 import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
@@ -9,9 +9,11 @@ const UserDetailsSidebar = ({ userId, onClose, onUserDeleted }) => {
   const { currencySymbol } = useSelector((state) => state.settings);
   const [user, setUser] = useState(null);
   const [bookings, setBookings] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showBookings, setShowBookings] = useState(false);
+  const [showReviews, setShowReviews] = useState(false);
 
   useEffect(() => {
     fetchUserData();
@@ -27,6 +29,7 @@ const UserDetailsSidebar = ({ userId, onClose, onUserDeleted }) => {
       
       setUser(detailsData.user);
       setBookings(detailsData.bookings);
+      setReviews(detailsData.reviews || []);
       setStats(statsData);
     } catch (error) {
       toast.error('Failed to load user details');
@@ -275,6 +278,83 @@ const UserDetailsSidebar = ({ userId, onClose, onUserDeleted }) => {
             ) : (
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Click "View All" to see booking history
+              </p>
+            )}
+          </div>
+
+          {/* Reviews Section */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <FaStar className="text-yellow-500" />
+                Reviews ({reviews.length})
+              </h3>
+              {reviews.length > 0 && (
+                <button
+                  onClick={() => setShowReviews(!showReviews)}
+                  className="text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-semibold"
+                >
+                  {showReviews ? 'Hide' : 'View All'}
+                </button>
+              )}
+            </div>
+
+            {reviews.length === 0 ? (
+              <div className="text-center py-8 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
+                <FaStar className="text-4xl text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                <p className="text-sm text-gray-500 dark:text-gray-400">No reviews yet</p>
+              </div>
+            ) : showReviews ? (
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {reviews.map((review) => (
+                  <div
+                    key={review._id}
+                    className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-4 border border-gray-200 dark:border-gray-700"
+                  >
+                    <div className="flex items-start gap-3">
+                      <img
+                        src={review.movie?.posterUrl}
+                        alt={review.movie?.title}
+                        className="w-16 h-24 object-cover rounded"
+                      />
+                      <div className="flex-1">
+                        <h4 className="font-bold text-gray-900 dark:text-white mb-1">
+                          {review.movie?.title}
+                        </h4>
+                        <div className="flex items-center gap-1 mb-2">
+                          {[...Array(5)].map((_, i) => (
+                            <FaStar
+                              key={i}
+                              className={`text-sm ${
+                                i < review.rating
+                                  ? 'text-yellow-500'
+                                  : 'text-gray-300 dark:text-gray-600'
+                              }`}
+                            />
+                          ))}
+                          <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                            {review.rating}/5
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                          {review.comment}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {new Date(review.createdAt).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}
+                          {review.isEdited && <span className="ml-2">(Edited)</span>}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Click "View All" to see reviews
               </p>
             )}
           </div>

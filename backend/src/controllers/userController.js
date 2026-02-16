@@ -9,7 +9,11 @@ const getAllUsers = async (req, res) => {
     const { page = 1, limit = 20, search = '' } = req.query;
     
     // Query for active users (isActive !== false, includes undefined for old users)
-    const query = { isActive: { $ne: false } };
+    // Exclude admin users from the list
+    const query = { 
+      isActive: { $ne: false },
+      role: { $ne: 'admin' }
+    };
     
     if (search) {
       query.$or = [
@@ -72,9 +76,17 @@ const getUserById = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
+    // Get user reviews
+    const Review = (await import('../models/Review.js')).default;
+    const reviews = await Review.find({ user: user._id })
+      .populate('movie', 'title posterUrl')
+      .sort({ createdAt: -1 })
+      .lean();
+
     res.json({
       user,
       bookings,
+      reviews,
     });
   } catch (error) {
     console.error('Error fetching user details:', error);

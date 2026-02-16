@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { FaFilm, FaTheaterMasks, FaCalendarAlt, FaCog, FaChartLine, FaBars, FaTimes, FaUsers } from 'react-icons/fa';
+import { FaFilm, FaTheaterMasks, FaCalendarAlt, FaCog, FaChartLine, FaBars, FaTimes, FaUsers, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 const AdminDashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const location = useLocation();
 
   // Helper to highlight the active sidebar item
@@ -33,39 +34,67 @@ const AdminDashboard = () => {
         />
       )}
 
-      {/* Sidebar Navigation */}
+      {/* Sidebar Navigation - Desktop: Sticky Icon-based, Mobile: Slide-over */}
       <aside 
         className={`
-          fixed md:static inset-y-0 left-0 z-40 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 
-          transform transition-transform duration-300 ease-in-out flex-shrink-0 h-full
-          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
-          md:translate-x-0
+          fixed md:sticky md:top-0 inset-y-0 left-0 z-40 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 
+          transform transition-all duration-300 ease-in-out flex-shrink-0 h-screen md:h-[calc(100vh-64px)] flex flex-col
+          ${isSidebarOpen ? 'translate-x-0 w-64' : '-translate-x-full w-64'} 
+          md:translate-x-0 ${isExpanded ? 'md:w-64' : 'md:w-20'}
         `}
       >
-        <div className="p-6 flex justify-between items-center">
-          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Management</h2>
-          {/* Close button for mobile inside sidebar */}
+        {/* Header */}
+        <div className="p-4 flex justify-between items-center border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+          {(isSidebarOpen || isExpanded) && (
+            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Management</h2>
+          )}
+          
+          {/* Mobile close button */}
           <button 
             onClick={() => setIsSidebarOpen(false)}
-            className="md:hidden text-gray-500 hover:text-red-500 transition-colors"
+            className="md:hidden text-gray-500 hover:text-red-500 transition-colors ml-auto"
           >
             <FaTimes size={20} />
           </button>
+
+          {/* Desktop expand/collapse button */}
+          <button 
+            onClick={() => setIsExpanded(!isExpanded)}
+            className={`hidden md:block text-gray-500 hover:text-red-500 transition-colors ${!isExpanded && 'mx-auto'}`}
+            title={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
+          >
+            {isExpanded ? <FaChevronLeft size={16} /> : <FaChevronRight size={16} />}
+          </button>
         </div>
         
-        <nav className="mt-2 space-y-1 px-2">
+        {/* Navigation Items */}
+        <nav className="mt-2 space-y-1 px-2 flex-1 overflow-y-auto scrollbar-hide">
           {navItems.map((item) => (
             <Link 
               key={item.path}
               to={item.path}
-              onClick={() => setIsSidebarOpen(false)} // Close sidebar on mobile when clicked
-              className={`flex items-center px-4 py-3 rounded-lg transition-colors duration-200 font-medium ${
+              onClick={() => setIsSidebarOpen(false)}
+              className={`flex items-center px-4 py-3 rounded-lg transition-colors duration-200 font-medium group relative ${
                 isActive(item.path)
                   ? 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400' 
                   : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
+              } ${!isExpanded && 'md:justify-center'}`}
+              title={!isExpanded ? item.label : ''}
             >
-              <span className="mr-3 text-lg">{item.icon}</span> {item.label}
+              <span className="text-lg flex-shrink-0">{item.icon}</span>
+              
+              {/* Label - shown on mobile or when expanded on desktop */}
+              {(isSidebarOpen || isExpanded) && (
+                <span className="ml-3">{item.label}</span>
+              )}
+
+              {/* Tooltip for collapsed desktop view */}
+              {!isExpanded && (
+                <div className="hidden md:group-hover:block absolute left-full ml-2 px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded-lg whitespace-nowrap z-50 shadow-lg">
+                  {item.label}
+                  <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900 dark:border-r-gray-700"></div>
+                </div>
+              )}
             </Link>
           ))}
         </nav>

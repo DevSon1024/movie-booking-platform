@@ -40,7 +40,7 @@ const AdminShowsPage = () => {
   return (
     <div className="p-2 sm:p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Showtimes</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Showtimes Management</h1>
         <button onClick={() => { setEditingShow(null); setIsModalOpen(true); }} className="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-lg shadow font-semibold flex items-center">
           <FaPlus className="mr-2" /> Schedule Show
         </button>
@@ -59,7 +59,7 @@ const AdminShowsPage = () => {
           </thead>
           <tbody className="divide-y dark:divide-gray-700">
             {shows.map((show) => (
-              <tr key={show._id} className="hover:bg-gray-50 dark:hover:bg-gray-750">
+              <tr key={show._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                 <td className="p-4 font-bold dark:text-white">{show.movie?.title}</td>
                 <td className="p-4 dark:text-gray-300">{show.theatre?.name}<div className="text-xs text-gray-500">{show.screenName}</div></td>
                 <td className="p-4 dark:text-gray-300">{new Date(show.startTime).toLocaleString()}</td>

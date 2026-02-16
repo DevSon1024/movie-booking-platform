@@ -45,7 +45,7 @@ const AdminTheatresPage = () => {
     <div className="p-2 sm:p-6">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Theatres</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Theatres Management</h1>
           <p className="text-gray-500">Manage theatre locations and screens</p>
         </div>
         <button onClick={() => { setEditingTheatre(null); setIsModalOpen(true); }} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg shadow-md flex items-center font-semibold">
