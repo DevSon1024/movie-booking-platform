@@ -1,0 +1,13 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M4 16C4 13.7909 5.79086 12 8 12H56C58.2091 12 60 13.7909 60 16V24C57.7909 24 56 25.7909 56 28V36C56 38.2091 57.7909 40 60 40V48C60 50.2091 58.2091 52 56 52H8C5.79086 52 4 50.2091 4 48V40C6.20914 40 8 38.2091 8 36V28C8 25.7909 6.20914 24 4 24V16Z" fill="#dc2626"/>
+  
+  <circle cx="14" cy="22" r="2" fill="white" fill-opacity="0.9"/>
+  <circle cx="14" cy="32" r="2" fill="white" fill-opacity="0.9"/>
+  <circle cx="14" cy="42" r="2" fill="white" fill-opacity="0.9"/>
+  
+  <circle cx="50" cy="22" r="2" fill="white" fill-opacity="0.9"/>
+  <circle cx="50" cy="32" r="2" fill="white" fill-opacity="0.9"/>
+  <circle cx="50" cy="42" r="2" fill="white" fill-opacity="0.9"/>
+
+  <path d="M26 22L42 32L26 42V22Z" fill="white"/>
+</svg>

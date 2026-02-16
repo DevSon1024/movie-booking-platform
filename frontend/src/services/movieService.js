@@ -8,13 +8,23 @@ export const getAdminMovies = async (keyword = '', sort = '') => {
 
 // Admin: Create Movie
 export const createMovie = async (movieData) => {
-  const response = await api.post('/movies', movieData);
+  const config = {
+    headers: {
+      'Content-Type': movieData instanceof FormData ? 'multipart/form-data' : 'application/json',
+    },
+  };
+  const response = await api.post('/movies', movieData, config);
   return response.data;
 };
 
 // Admin: Update Movie
 export const updateMovie = async (id, movieData) => {
-  const response = await api.put(`/movies/${id}`, movieData);
+  const config = {
+    headers: {
+      'Content-Type': movieData instanceof FormData ? 'multipart/form-data' : 'application/json',
+    },
+  };
+  const response = await api.put(`/movies/${id}`, movieData, config);
   return response.data;
 };
 

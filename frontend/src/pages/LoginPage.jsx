@@ -4,10 +4,13 @@ import { useNavigate, Link } from "react-router-dom";
 import { login, clearError } from "../redux/slices/authSlice";
 import toast from "react-hot-toast";
 import LoadingSpinner from '../components/LoadingSpinner';
-import { FaEnvelope, FaLock, FaSignInAlt } from "react-icons/fa";
+import { FaEnvelope, FaLock, FaSignInAlt, FaEye, FaEyeSlash } from "react-icons/fa";
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 const LoginPage = () => {
+  useDocumentTitle('Login');
   const [formData, setFormData] = useState({ email: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -80,8 +83,8 @@ const LoginPage = () => {
                   <FaLock className="text-gray-400 dark:text-gray-500" />
                 </div>
                 <input
-                  type="password"
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent outline-none transition-all"
+                  type={showPassword ? "text" : "password"}
+                  className="w-full pl-10 pr-12 py-3 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent outline-none transition-all"
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={(e) =>
@@ -89,6 +92,13 @@ const LoginPage = () => {
                   }
                   required
                 />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer transition-colors"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
               </div>
             </div>
 

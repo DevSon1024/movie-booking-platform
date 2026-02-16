@@ -78,9 +78,9 @@ const fetchAndCacheImage = async (url) => {
       return null;
     }
   } catch (error) {
-    // Network error or CORS issue - return null to trigger fallback
-    console.warn('Error fetching image:', error.message);
-    return null;
+    // Network error or CORS issue - return original URL to try loading directly
+    console.warn('Error fetching image for cache:', error.message);
+    return url;
   }
 };
 
@@ -119,8 +119,8 @@ export const getCachedImage = async (url) => {
     return result; // Will be null if fetch failed, triggering fallback
   } catch (error) {
     console.warn('Error getting cached image:', error.message);
-    // Return null to trigger fallback instead of original URL
-    return null;
+    // Return original URL to try loading directly
+    return url;
   }
 };
 

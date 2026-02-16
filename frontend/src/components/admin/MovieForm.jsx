@@ -12,6 +12,11 @@ const MovieForm = ({ initialData, isEditing, onClose, onSubmit }) => {
     releaseDate: '', posterUrl: '', trailerUrl: '', status: 'UPCOMING',
     cast: [], crew: []
   });
+  
+  // Poster Upload State
+  const [posterFile, setPosterFile] = useState(null);
+  const [uploadMode, setUploadMode] = useState('url'); // 'url' or 'file'
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -31,17 +36,74 @@ const MovieForm = ({ initialData, isEditing, onClose, onSubmit }) => {
           cast: initialData.cast || [],
           crew: initialData.crew || []
         });
+        // Default to URL mode when editing
+        setUploadMode('url');
       }
     };
 
     loadData();
   }, [initialData, isEditing]);
 
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+        setPosterFile(file);
+        setUploadMode('file');
+        const previewUrl = URL.createObjectURL(file);
+        setFormData(prev => ({ ...prev, posterUrl: previewUrl }));
+    } else {
+        toast.error('Please drop a valid image file');
+    }
+  };
+
+  const handlePosterFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setPosterFile(file);
+      const previewUrl = URL.createObjectURL(file);
+      setFormData(prev => ({ ...prev, posterUrl: previewUrl }));
+    }
+  };
+
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    
+    const submitData = new FormData();
+    
+    // Append simple fields
+    Object.keys(formData).forEach(key => {
+        if (key !== 'cast' && key !== 'crew' && key !== 'posterUrl') {
+            submitData.append(key, formData[key] === null ? '' : formData[key]);
+        }
+    });
+
+    // Handle Poster
+    if (uploadMode === 'file' && posterFile) {
+        submitData.append('posterFile', posterFile);
+    } else {
+        submitData.append('posterUrl', formData.posterUrl || '');
+    }
+
+    // Handle Complex Fields (Cast & Crew)
+    // Send as JSON strings, backend will parse them
+    submitData.append('cast', JSON.stringify(formData.cast));
+    submitData.append('crew', JSON.stringify(formData.crew));
+
+    onSubmit(submitData);
   };
 
   const addToMovie = (celeb, type, role) => {
@@ -131,8 +193,78 @@ const MovieForm = ({ initialData, isEditing, onClose, onSubmit }) => {
                   </select>
                 </div>
                 <div className="md:col-span-2 space-y-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase">Poster URL</label>
-                  <input name="posterUrl" value={formData.posterUrl} onChange={handleChange} className="w-full p-3 bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 dark:text-white" required />
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs font-bold text-gray-500 uppercase">Poster Image</label>
+                    <div className="flex bg-gray-100 dark:bg-gray-700 p-1 rounded-lg">
+                        <button
+                          type="button"
+                          onClick={() => { setUploadMode('url'); setPosterFile(null); if(isEditing) setFormData(prev => ({...prev, posterUrl: initialData.posterUrl || ''})); }}
+                          className={`px-3 py-1 rounded text-xs font-bold transition-all ${uploadMode === 'url' ? 'bg-white dark:bg-gray-600 shadow text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}
+                        >
+                          URL
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setUploadMode('file'); setFormData(prev => ({...prev, posterUrl: ''})); }}
+                          className={`px-3 py-1 rounded text-xs font-bold transition-all ${uploadMode === 'file' ? 'bg-white dark:bg-gray-600 shadow text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}
+                        >
+                          Upload
+                        </button>
+                    </div>
+                  </div>
+                  
+                  {uploadMode === 'url' ? (
+                      <input 
+                        name="posterUrl" 
+                        value={formData.posterUrl} 
+                        onChange={handleChange} 
+                        className="w-full p-3 bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 dark:text-white" 
+                        placeholder="https://example.com/poster.jpg"
+                        required={!posterFile} 
+                      />
+                  ) : (
+                      <div 
+                        className={`border-2 border-dashed rounded-xl p-6 text-center transition-all bg-gray-50 dark:bg-gray-700/50 ${
+                            isDragging 
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/10 scale-[1.02]' 
+                            : 'border-gray-300 dark:border-gray-600 hover:border-blue-400'
+                        }`}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                      >
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={handlePosterFileChange}
+                          className="hidden" 
+                          id="poster-upload"
+                          required={!formData.posterUrl}
+                        />
+                        <label htmlFor="poster-upload" className="cursor-pointer flex flex-col items-center w-full h-full">
+                          <FaPlus className={`text-2xl mb-2 transition-colors ${isDragging ? 'text-blue-500' : 'text-gray-400'}`} />
+                          <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
+                            {isDragging ? 'Drop poster here' : !!posterFile ? 'Change File' : 'Click or Drag to Upload Poster'}
+                          </span>
+                        </label>
+                        {posterFile && (
+                          <div className="mt-2 text-xs text-green-600 font-semibold truncate max-w-xs mx-auto">
+                            {posterFile.name}
+                          </div>
+                        )}
+                        {/* Preview specific for upload mode if needed, effectively duplicate of formData.posterUrl if set */}
+                      </div>
+                  )}
+                  {formData.posterUrl && (
+                      <div className="mt-2 w-full h-48 bg-gray-100 dark:bg-gray-900 rounded-lg overflow-hidden relative">
+                          <img 
+                            src={formData.posterUrl} 
+                            alt="Poster Preview" 
+                            className="w-full h-full object-contain"
+                            onError={(e) => {e.target.style.display='none'}}
+                          />
+                      </div>
+                  )}
                 </div>
                 <div className="md:col-span-2 space-y-2">
                   <label className="text-xs font-bold text-gray-500 uppercase">Trailer URL (YouTube)</label>

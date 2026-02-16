@@ -7,7 +7,10 @@ import { MovieCardSkeleton, HeroSkeleton, CarouselCardSkeleton } from '../compon
 import { FaTicketAlt, FaStar, FaCalendarAlt, FaPlay, FaChevronRight, FaChevronLeft, FaGlobe, FaClock, FaFire, FaTimes } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
+import useDocumentTitle from '../hooks/useDocumentTitle';
+
 const HomePage = () => {
+  useDocumentTitle('Home');
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

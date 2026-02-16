@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { FaFilm, FaTheaterMasks, FaCalendarAlt, FaCog, FaChartLine, FaBars, FaTimes, FaUsers, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import useDocumentTitle from '../../hooks/useDocumentTitle';
 
 const AdminDashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -22,6 +23,9 @@ const AdminDashboard = () => {
     { path: '/admin/shows', label: 'Shows', icon: <FaCalendarAlt /> },
     { path: '/admin/settings', label: 'Settings', icon: <FaCog /> },
   ];
+
+  const activeItem = navItems.find(item => isActive(item.path));
+  useDocumentTitle(activeItem ? `Admin - ${activeItem.label}` : 'Admin Dashboard');
 
   return (
     <div className="flex relative min-h-[calc(100vh-64px)] bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300 overflow-hidden">

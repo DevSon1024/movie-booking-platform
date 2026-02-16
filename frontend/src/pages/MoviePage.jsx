@@ -19,12 +19,14 @@ import {
   FaUser, 
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 const MoviePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   
   const [movie, setMovie] = useState(null);
+  useDocumentTitle(movie ? movie.title : 'Movie Details');
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [ratingStats, setRatingStats] = useState({ average: 0, count: 0 });

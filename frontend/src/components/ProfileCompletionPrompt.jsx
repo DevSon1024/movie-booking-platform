@@ -11,15 +11,23 @@ const ProfileCompletionPrompt = () => {
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    if (!userInfo) return;
+    if (!userInfo) {
+        setShowPrompt(false);
+        return;
+    }
 
     const checkProfileCompletion = async () => {
       try {
         const profile = await getProfile();
         
-        // Check if profile is incomplete
-        if (!profile.isProfileComplete && !dismissed) {
+        // Define what constitutes an incomplete profile
+        // e.g. missing phone or city
+        const isIncomplete = !profile.phone || !profile.city;
+        
+        if (isIncomplete && !dismissed) {
           setShowPrompt(true);
+        } else {
+            setShowPrompt(false);
         }
       } catch (error) {
         console.error('Error checking profile completion:', error);
@@ -30,7 +38,7 @@ const ProfileCompletionPrompt = () => {
   }, [userInfo, dismissed]);
 
   const handleDismiss = () => {
-    setDismissed(true);
+    setDismissed(true); // Dismiss for this session (page reload will reset this)
     setShowPrompt(false);
   };
 
@@ -57,7 +65,7 @@ const ProfileCompletionPrompt = () => {
               onClick={handleDismiss}
               className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white font-semibold rounded-lg transition-colors text-sm"
             >
-              Later
+              Remind Me Later
             </button>
           </div>
         </div>

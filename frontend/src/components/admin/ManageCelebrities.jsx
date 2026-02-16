@@ -20,6 +20,30 @@ const ManageCelebrities = ({ onClose }) => {
   // Image Search State
   const [wikiImages, setWikiImages] = useState([]);
   const [searchingImages, setSearchingImages] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+        setImageFile(file);
+        const previewUrl = URL.createObjectURL(file);
+        setFormData(prev => ({ ...prev, image: previewUrl }));
+    } else {
+        toast.error('Please drop a valid image file');
+    }
+  };
 
   useEffect(() => {
     fetchCelebrities();
@@ -547,7 +571,16 @@ const ManageCelebrities = ({ onClose }) => {
                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
                     Upload Image *
                   </label>
-                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-6 text-center hover:border-red-400 transition bg-gray-50 dark:bg-gray-700/50">
+                  <div 
+                    className={`border-2 border-dashed rounded-xl p-6 text-center transition-all bg-gray-50 dark:bg-gray-700/50 ${
+                        isDragging 
+                        ? 'border-red-500 bg-red-50 dark:bg-red-900/10 scale-105' 
+                        : 'border-gray-300 dark:border-gray-600 hover:border-red-400'
+                    }`}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                  >
                     <input 
                       type="file" 
                       accept="image/*"
@@ -556,13 +589,15 @@ const ManageCelebrities = ({ onClose }) => {
                       id="file-upload"
                       required={!isEditing && !formData.image}
                     />
-                    <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center">
-                      <FaImage className="text-4xl text-gray-400 mb-2" />
-                      <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Click to upload image</span>
+                    <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center w-full h-full">
+                      <FaImage className={`text-4xl mb-2 transition-colors ${isDragging ? 'text-red-500' : 'text-gray-400'}`} />
+                      <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
+                        {isDragging ? 'Drop image here' : 'Click or Drag & Drop to upload'}
+                      </span>
                       <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">JPG, PNG, WebP (Max 5MB)</span>
                     </label>
                     {imageFile && (
-                      <div className="mt-2 text-sm text-green-600 font-semibold">
+                      <div className="mt-2 text-sm text-green-600 font-semibold animate-pulse">
                         Selected: {imageFile.name}
                       </div>
                     )}
