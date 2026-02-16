@@ -157,10 +157,18 @@ const MoviePage = () => {
 
   const theatreList = getTheatresForCityAndDate();
 
-  const formatRuntime = (minutes) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
+  const formatRuntime = (mins) => {
+    const hours = Math.floor(mins / 60);
+    const minutes = mins % 60;
+    return `${hours}h ${minutes}m`;
+  };
+
+  // Extract YouTube video ID from URL
+  const getYouTubeVideoId = (url) => {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
   };
 
   const handleShowtimeClick = (showId) => {
@@ -214,57 +222,58 @@ const MoviePage = () => {
             Back
           </button>
 
-          <div className="flex flex-col md:flex-row gap-8 md:gap-12 items-center md:items-start">
+          <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-center md:items-start max-w-6xl mx-auto">
             <div className="flex-shrink-0 group perspective-1000">
               <CachedImage 
                 src={movie.posterUrl} 
                 alt={movie.title} 
-                className="w-56 md:w-72 rounded-xl shadow-2xl border-2 border-gray-700 dark:border-gray-800 group-hover:rotate-1 transition-transform duration-500" 
+                className="w-48 md:w-64 rounded-xl shadow-2xl border-2 border-gray-700 dark:border-gray-800 group-hover:rotate-1 transition-transform duration-500" 
                 fallbackSrc="/placeholder-movie.svg"
                 lazy={false}
               />
             </div>
 
             <div className="flex-1 text-white text-center md:text-left">
-              <h1 className="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight">
+              <h1 className="text-3xl md:text-5xl font-extrabold mb-3 tracking-tight leading-tight">
                 {movie.title}
               </h1>
 
-              <div className="flex items-center justify-center md:justify-start gap-4 mb-6">
-                <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-lg flex items-center gap-2 border border-white/10">
-                  <FaStar className="text-yellow-400 text-lg" />
-                  <span className="font-bold text-lg">
-                    {ratingStats.average > 0 ? `${ratingStats.average}/5` : 'Rating not given yet'}
+              <div className="flex items-center justify-center md:justify-start gap-4 mb-4">
+                <div className="bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-lg flex items-center gap-2 border border-white/10 text-sm md:text-base">
+                  <FaStar className="text-yellow-400" />
+                  <span className="font-bold">
+                    {ratingStats.average > 0 ? `${ratingStats.average}/5` : 'No Rating'}
                   </span>
                   {ratingStats.average > 0 && (
-                      <span className="text-gray-400 text-sm hidden sm:inline">({ratingStats.count} Reviews)</span>
+                      <span className="text-gray-400 text-xs hidden sm:inline">({ratingStats.count} Reviews)</span>
                   )}
                 </div>
               </div>
 
-              <div className="flex flex-wrap justify-center md:justify-start gap-3 mb-8">
-                <div className="bg-gray-800/80 px-4 py-1.5 rounded text-sm border border-gray-700">
-                  <span className="font-medium text-gray-200">{movie.genre}</span>
+              <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-6">
+                <div className="bg-gray-800/80 px-3 py-1 rounded text-xs md:text-sm border border-gray-700 flex items-center gap-1.5 text-gray-300">
+                   <span className="text-gray-400">Genre:</span>
+                   <span className="font-medium text-white">{movie.genre}</span>
                 </div>
-                <div className="bg-gray-800/80 px-4 py-1.5 rounded text-sm border border-gray-700 flex items-center gap-2 text-gray-300">
-                  <FaClock className="text-red-400" />
+                <div className="bg-gray-800/80 px-3 py-1 rounded text-xs md:text-sm border border-gray-700 flex items-center gap-1.5 text-gray-300">
+                  <FaClock className="text-red-400 text-xs" />
                   <span>{formatRuntime(movie.duration)}</span>
                 </div>
-                <div className="bg-gray-800/80 px-4 py-1.5 rounded text-sm border border-gray-700 flex items-center gap-2 text-gray-300">
-                  <FaCalendarAlt className="text-blue-400" />
+                <div className="bg-gray-800/80 px-3 py-1 rounded text-xs md:text-sm border border-gray-700 flex items-center gap-1.5 text-gray-300">
+                  <FaCalendarAlt className="text-blue-400 text-xs" />
                   <span>{new Date(movie.releaseDate).toLocaleDateString('en-US', { year: 'numeric' })}</span>
                 </div>
-                <div className="bg-gray-800/80 px-4 py-1.5 rounded text-sm border border-gray-700 text-gray-300">
+                <div className="bg-gray-800/80 px-3 py-1 rounded text-xs md:text-sm border border-gray-700 text-gray-300">
                   {movie.language}
                 </div>
-                <div className="bg-red-600 px-3 py-1 rounded text-xs font-bold uppercase tracking-wider self-center">
+                <div className="bg-red-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider self-center">
                   U/A
                 </div>
               </div>
 
               <button 
                 onClick={() => setShowBookingModal(true)}
-                className="bg-red-600 hover:bg-red-700 text-white px-10 py-3.5 rounded-full font-bold text-base shadow-lg hover:shadow-red-600/30 hover:scale-105 transition-all flex items-center gap-2 mx-auto md:mx-0"
+                className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-full font-bold text-sm md:text-base shadow-lg hover:shadow-red-600/30 hover:scale-105 transition-all flex items-center gap-2 mx-auto md:mx-0"
               >
                 <FaTicketAlt />
                 Book Tickets
@@ -273,6 +282,28 @@ const MoviePage = () => {
           </div>
         </div>
       </div>
+
+      {/* YouTube Trailer Section - Desktop & Mobile */}
+      {movie.trailerUrl && getYouTubeVideoId(movie.trailerUrl) && (
+        <div className="bg-gray-100 dark:bg-gray-800 py-8">
+          <div className="container mx-auto px-6 max-w-7xl">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+              <FaTicketAlt className="text-red-600" />
+              Watch Trailer
+            </h2>
+            <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl">
+              <iframe
+                className="w-full h-full"
+                src={`https://www.youtube.com/embed/${getYouTubeVideoId(movie.trailerUrl)}`}
+                title={`${movie.title} Trailer`}
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="container mx-auto px-6 py-12 max-w-7xl">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">

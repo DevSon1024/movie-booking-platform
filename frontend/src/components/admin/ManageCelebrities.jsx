@@ -12,6 +12,8 @@ const ManageCelebrities = ({ onClose }) => {
   
   // Form State
   const [formData, setFormData] = useState({ id: '', name: '', image: '' });
+  const [imageFile, setImageFile] = useState(null);
+  const [uploadMode, setUploadMode] = useState('url'); // 'url' or 'file'
   const [isEditing, setIsEditing] = useState(false);
   const [showForm, setShowForm] = useState(false);
   
@@ -71,25 +73,61 @@ const ManageCelebrities = ({ onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const submitData = new FormData();
+      submitData.append('name', formData.name);
+      
+      if (uploadMode === 'file' && imageFile) {
+        submitData.append('imageFile', imageFile);
+      } else if (uploadMode === 'url' && formData.image) {
+        submitData.append('image', formData.image);
+      } else if (isEditing && !imageFile && !formData.image) {
+        // Keep existing image if editing and no new image provided
+      } else {
+         // Validation fallback
+         if (!isEditing && !imageFile && !formData.image) {
+            toast.error("Please provide an image URL or upload a file");
+            return;
+         }
+      }
+
       if (isEditing) {
-        await updateCelebrity(formData.id, { name: formData.name, image: formData.image });
+        await updateCelebrity(formData.id, submitData);
         toast.success('Celebrity Updated Successfully!');
       } else {
-        await createCelebrity({ name: formData.name, image: formData.image });
+        await createCelebrity(submitData);
         toast.success('Celebrity Added Successfully!');
       }
-      setFormData({ id: '', name: '', image: '' });
-      setIsEditing(false);
-      setShowForm(false);
-      setWikiImages([]);
+      resetForm();
       fetchCelebrities();
     } catch (err) {
+      console.error(err);
       toast.error(err.response?.data?.message || 'Operation failed');
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({ id: '', name: '', image: '' });
+    setImageFile(null);
+    setUploadMode('url');
+    setIsEditing(false);
+    setShowForm(false);
+    setWikiImages([]);
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setFormData(prev => ({ ...prev, image: previewUrl }));
     }
   };
 
   const handleEdit = (celeb) => {
     setFormData(celeb);
+    setImageFile(null);
+    setUploadMode('url'); // Default to URL mode when editing, user can switch to upload
     setIsEditing(true);
     setShowForm(true);
     setWikiImages([]);
@@ -108,10 +146,7 @@ const ManageCelebrities = ({ onClose }) => {
   };
 
   const handleCancel = () => {
-    setIsEditing(false);
-    setShowForm(false);
-    setFormData({ id: '', name: '', image: '' });
-    setWikiImages([]);
+    resetForm();
   };
 
   const filteredCelebrities = celebrities.filter(c => 
@@ -461,33 +496,79 @@ const ManageCelebrities = ({ onClose }) => {
                 </div>
               )}
 
-              {/* Image URL Input */}
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                  Image URL *
-                </label>
-                <div className="flex gap-2">
-                  <input 
-                    type="url" 
-                    className="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none text-sm transition"
-                    value={formData.image}
-                    onChange={(e) => setFormData({...formData, image: e.target.value})}
-                    placeholder="https://example.com/image.jpg"
-                    required
-                  />
-                  {formData.image && (
-                    <a 
-                      href={formData.image} 
-                      target="_blank" 
-                      rel="noreferrer" 
-                      className="p-3 rounded-xl border border-gray-300 dark:border-gray-600 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 transition group"
-                      title="Open image in new tab"
-                    >
-                      <FaExternalLinkAlt className="text-gray-500 group-hover:text-red-600 transition" />
-                    </a>
-                  )}
-                </div>
+              {/* Image Source Toggle */}
+              <div className="flex bg-gray-100 dark:bg-gray-700 p-1 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => { setUploadMode('url'); setFormData(prev => ({...prev, image: isEditing && !imageFile ? prev.image : ''})); setImageFile(null); }}
+                  className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${uploadMode === 'url' ? 'bg-white dark:bg-gray-600 shadow text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}
+                >
+                  Image URL
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setUploadMode('file'); setFormData(prev => ({...prev, image: ''})); }}
+                  className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${uploadMode === 'file' ? 'bg-white dark:bg-gray-600 shadow text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}
+                >
+                  Upload File
+                </button>
               </div>
+
+              {/* Image Input Area */}
+              {uploadMode === 'url' ? (
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                    Image URL *
+                  </label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="url" 
+                      className="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none text-sm transition"
+                      value={!imageFile ? formData.image : ''}
+                      onChange={(e) => setFormData({...formData, image: e.target.value})}
+                      placeholder="https://example.com/image.jpg"
+                      required={!isEditing}
+                    />
+                    {formData.image && !imageFile && (
+                      <a 
+                        href={formData.image} 
+                        target="_blank" 
+                        rel="noreferrer" 
+                        className="p-3 rounded-xl border border-gray-300 dark:border-gray-600 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 transition group"
+                        title="Open image in new tab"
+                      >
+                        <FaExternalLinkAlt className="text-gray-500 group-hover:text-red-600 transition" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                    Upload Image *
+                  </label>
+                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-6 text-center hover:border-red-400 transition bg-gray-50 dark:bg-gray-700/50">
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden" 
+                      id="file-upload"
+                      required={!isEditing && !formData.image}
+                    />
+                    <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center">
+                      <FaImage className="text-4xl text-gray-400 mb-2" />
+                      <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Click to upload image</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">JPG, PNG, WebP (Max 5MB)</span>
+                    </label>
+                    {imageFile && (
+                      <div className="mt-2 text-sm text-green-600 font-semibold">
+                        Selected: {imageFile.name}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
               
               {/* Image Preview */}
               <div>

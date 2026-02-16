@@ -6,12 +6,16 @@ export const getCelebrities = async () => {
 };
 
 export const createCelebrity = async (data) => {
-  const response = await api.post('/celebrities', data);
+  const isFormData = data instanceof FormData;
+  const config = isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+  const response = await api.post('/celebrities', data, config);
   return response.data;
 };
 
 export const updateCelebrity = async (id, data) => {
-  const response = await api.put(`/celebrities/${id}`, data);
+  const isFormData = data instanceof FormData;
+  const config = isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+  const response = await api.put(`/celebrities/${id}`, data, config);
   return response.data;
 };
 

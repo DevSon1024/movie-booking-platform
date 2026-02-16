@@ -9,7 +9,7 @@ const MovieForm = ({ initialData, isEditing, onClose, onSubmit }) => {
   const [celebrities, setCelebrities] = useState([]);
   const [formData, setFormData] = useState({
     title: '', description: '', genre: '', duration: '', language: '', 
-    releaseDate: '', posterUrl: '', status: 'UPCOMING',
+    releaseDate: '', posterUrl: '', trailerUrl: '', status: 'UPCOMING',
     cast: [], crew: []
   });
 
@@ -27,6 +27,7 @@ const MovieForm = ({ initialData, isEditing, onClose, onSubmit }) => {
         setFormData({
           ...initialData,
           releaseDate: initialData.releaseDate ? initialData.releaseDate.split('T')[0] : '',
+          trailerUrl: initialData.trailerUrl || '',
           cast: initialData.cast || [],
           crew: initialData.crew || []
         });
@@ -132,6 +133,17 @@ const MovieForm = ({ initialData, isEditing, onClose, onSubmit }) => {
                 <div className="md:col-span-2 space-y-2">
                   <label className="text-xs font-bold text-gray-500 uppercase">Poster URL</label>
                   <input name="posterUrl" value={formData.posterUrl} onChange={handleChange} className="w-full p-3 bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 dark:text-white" required />
+                </div>
+                <div className="md:col-span-2 space-y-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase">Trailer URL (YouTube)</label>
+                  <input 
+                    name="trailerUrl" 
+                    value={formData.trailerUrl} 
+                    onChange={handleChange} 
+                    className="w-full p-3 bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 dark:text-white" 
+                    placeholder="https://www.youtube.com/watch?v=xxxxx or https://youtu.be/xxxxx"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Optional: Add YouTube trailer link for this movie</p>
                 </div>
                 <div className="md:col-span-2 space-y-2">
                   <label className="text-xs font-bold text-gray-500 uppercase">Description</label>

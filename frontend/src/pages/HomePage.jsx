@@ -4,13 +4,17 @@ import api from '../services/api';
 import CachedImage from '../components/CachedImage';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { MovieCardSkeleton, HeroSkeleton, CarouselCardSkeleton } from '../components/SkeletonLoader';
-import { FaTicketAlt, FaStar, FaCalendarAlt, FaPlay, FaChevronRight, FaChevronLeft, FaGlobe, FaClock, FaFire } from 'react-icons/fa';
+import { FaTicketAlt, FaStar, FaCalendarAlt, FaPlay, FaChevronRight, FaChevronLeft, FaGlobe, FaClock, FaFire, FaTimes } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
 const HomePage = () => {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('ALL');
   const [showAll, setShowAll] = useState(false);
+  const [showTrailerModal, setShowTrailerModal] = useState(false);
+  const [currentTrailerUrl, setCurrentTrailerUrl] = useState('');
   
   // Carousel states
   const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
@@ -78,6 +82,33 @@ const HomePage = () => {
     ) : (
       <span className="text-gray-400 italic text-xs">No Rating</span>
     );
+  };
+
+  // Extract YouTube video ID from URL
+  const getYouTubeVideoId = (url) => {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+
+  const handleWatchTrailer = (trailerUrl) => {
+    if (!trailerUrl) {
+      toast.error('Trailer not available for this movie');
+      return;
+    }
+    setCurrentTrailerUrl(trailerUrl);
+    setShowTrailerModal(true);
+  };
+
+  const closeTrailerModal = () => {
+    setShowTrailerModal(false);
+    setCurrentTrailerUrl('');
+  };
+
+  const toggleFilter = (newFilter) => {
+    setFilter(newFilter);
+    setShowAll(false);
   };
 
   if (loading) return (
@@ -159,7 +190,10 @@ const HomePage = () => {
                     >
                         <FaTicketAlt className="mr-2" /> Book Now
                     </Link>
-                    <button className="bg-white/10 hover:bg-white/20 text-white border border-white/30 px-8 py-4 rounded-full text-base font-bold flex items-center transition backdrop-blur-md">
+                    <button 
+                      onClick={() => handleWatchTrailer(trendingMovies[currentHeroSlide].trailerUrl)}
+                      className="bg-white/10 hover:bg-white/20 text-white border border-white/30 px-8 py-4 rounded-full text-base font-bold flex items-center transition backdrop-blur-md"
+                    >
                         <FaPlay className="mr-2" /> Watch Trailer
                     </button>
                   </div>
@@ -357,6 +391,40 @@ const HomePage = () => {
             </div>
         )}
       </div>
+
+      {/* YouTube Trailer Modal */}
+      {showTrailerModal && (
+        <div 
+          className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={closeTrailerModal}
+        >
+          <div 
+            className="relative w-full max-w-5xl aspect-video bg-black rounded-xl overflow-hidden shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={closeTrailerModal}
+              className="absolute top-4 right-4 z-10 bg-red-600 hover:bg-red-700 text-white w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-lg"
+            >
+              <FaTimes size={20} />
+            </button>
+            {getYouTubeVideoId(currentTrailerUrl) ? (
+              <iframe
+                className="w-full h-full"
+                src={`https://www.youtube.com/embed/${getYouTubeVideoId(currentTrailerUrl)}?autoplay=1`}
+                title="Movie Trailer"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-white">
+                <p>Invalid trailer URL</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

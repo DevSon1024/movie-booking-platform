@@ -37,6 +37,18 @@ const movieSchema = new mongoose.Schema(
       type: String, 
       required: true,
     },
+    trailerUrl: {
+      type: String,
+      required: false,
+      validate: {
+        validator: function(v) {
+          if (!v) return true; // Allow empty
+          // Validate YouTube URL format
+          return /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w-]+/.test(v);
+        },
+        message: 'Invalid YouTube URL format'
+      }
+    },
     // New Fields for Cast and Crew
     cast: [castCrewSchema],
     crew: [castCrewSchema],

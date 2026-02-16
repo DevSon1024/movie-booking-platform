@@ -88,7 +88,7 @@ const getMovieById = async (req, res) => {
 // @route   POST /api/movies
 // @access  Private/Admin
 const createMovie = async (req, res) => {
-  const { title, description, genre, duration, language, releaseDate, posterUrl, status, cast, crew } = req.body;
+  const { title, description, genre, duration, language, releaseDate, posterUrl, trailerUrl, status, cast, crew } = req.body;
 
   const movie = new Movie({
     title,
@@ -98,6 +98,7 @@ const createMovie = async (req, res) => {
     language,
     releaseDate,
     posterUrl,
+    trailerUrl,
     status,
     cast: cast || [],
     crew: crew || []
@@ -111,7 +112,7 @@ const createMovie = async (req, res) => {
 // @route   PUT /api/movies/:id
 // @access  Private/Admin
 const updateMovie = async (req, res) => {
-  const { title, description, genre, duration, language, releaseDate, posterUrl, status, cast, crew } = req.body;
+  const { title, description, genre, duration, language, releaseDate, posterUrl, trailerUrl, status, cast, crew } = req.body;
   
   const movie = await Movie.findById(req.params.id);
 
@@ -123,6 +124,7 @@ const updateMovie = async (req, res) => {
     movie.language = language || movie.language;
     movie.releaseDate = releaseDate || movie.releaseDate;
     movie.posterUrl = posterUrl || movie.posterUrl;
+    movie.trailerUrl = trailerUrl || movie.trailerUrl;
     movie.status = status || movie.status;
     
     if (cast) movie.cast = cast;
