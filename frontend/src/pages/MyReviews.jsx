@@ -3,6 +3,7 @@ import { getMyReviews, deleteReview, updateReview } from '../services/reviewServ
 import { FaStar, FaTrash, FaEdit, FaList, FaTh, FaCalendarAlt, FaQuoteLeft } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const MyReviews = () => {
   const [reviews, setReviews] = useState([]);
@@ -64,7 +65,7 @@ const MyReviews = () => {
 
   if (loading) return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
+      <LoadingSpinner size="large" text="Loading Reviews..." />
     </div>
   );
 

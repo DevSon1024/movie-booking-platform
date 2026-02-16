@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { FaUsers, FaSearch, FaEye, FaTrash, FaSpinner } from 'react-icons/fa';
+import { FaUsers, FaSearch, FaEye, FaTrash } from 'react-icons/fa';
 import { getAllUsers, deleteUser } from '../../services/userService';
 import UserDetailsSidebar from '../../components/admin/UserDetailsSidebar';
 import toast from 'react-hot-toast';
+import LoadingSpinner from '../../components/LoadingSpinner';
+import { TableRowSkeleton } from '../../components/SkeletonLoader';
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -98,7 +100,7 @@ const UserManagement = () => {
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <FaSpinner className="animate-spin text-4xl text-red-600" />
+            <LoadingSpinner size="large" />
           </div>
         ) : users.length === 0 ? (
           <div className="text-center py-20">
@@ -192,7 +194,7 @@ const UserManagement = () => {
                             title={user.role === 'admin' ? 'Cannot delete admin' : 'Delete User'}
                           >
                             {deleting === user._id ? (
-                              <FaSpinner className="animate-spin" />
+                              <LoadingSpinner size="small" />
                             ) : (
                               <FaTrash />
                             )}

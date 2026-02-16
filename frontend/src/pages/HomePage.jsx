@@ -2,6 +2,8 @@ import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import CachedImage from '../components/CachedImage';
+import LoadingSpinner from '../components/LoadingSpinner';
+import { MovieCardSkeleton, HeroSkeleton, CarouselCardSkeleton } from '../components/SkeletonLoader';
 import { FaTicketAlt, FaStar, FaCalendarAlt, FaPlay, FaChevronRight, FaChevronLeft, FaGlobe, FaClock, FaFire } from 'react-icons/fa';
 
 const HomePage = () => {
@@ -79,11 +81,41 @@ const HomePage = () => {
   };
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400">
-       <div className="animate-pulse flex flex-col items-center">
-          <div className="w-14 h-14 bg-gray-300 dark:bg-gray-700 rounded-full mb-4"></div>
-          <p className="text-lg font-medium">Loading Movies...</p>
-       </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-white transition-colors duration-300 font-sans">
+      {/* Hero Skeleton */}
+      <HeroSkeleton />
+      
+      <div className="container mx-auto px-6 py-12">
+        {/* Now Showing Skeleton */}
+        <div className="mb-16">
+          <div className="flex items-center justify-between mb-8">
+            <div className="h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          </div>
+          <div className="overflow-hidden -mx-3 py-2">
+            <div className="flex gap-0">
+              {Array.from({ length: 4 }).map((_, idx) => (
+                <CarouselCardSkeleton key={idx} />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Explore Movies Header Skeleton */}
+        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+          <div>
+            <div className="h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2"></div>
+            <div className="h-4 w-64 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          </div>
+          <div className="h-12 w-80 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+        </div>
+
+        {/* Movie Grid Skeleton */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6">
+          {Array.from({ length: 10 }).map((_, idx) => (
+            <MovieCardSkeleton key={idx} />
+          ))}
+        </div>
+      </div>
     </div>
   );
 

@@ -3,7 +3,9 @@ import { FaEdit, FaTrash, FaPlus, FaSearch, FaUserTie } from 'react-icons/fa';
 import { getAdminMovies, createMovie, updateMovie, deleteMovie } from '../../services/movieService';
 import toast from 'react-hot-toast';
 import MovieForm from '../../components/admin/MovieForm';
-import ManageCelebrities from '../../components/admin/ManageCelebrities'; // Import new component
+import ManageCelebrities from '../../components/admin/ManageCelebrities';
+import LoadingSpinner from '../../components/LoadingSpinner';
+import { MovieCardSkeleton } from '../../components/SkeletonLoader';
 
 const AdminMoviesPage = () => {
   const [movies, setMovies] = useState([]);
@@ -96,31 +98,39 @@ const AdminMoviesPage = () => {
       </div>
 
       {/* Movies Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {movies.map(m => (
-          <div key={m._id} className="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700">
-             <div className="relative h-64 overflow-hidden">
-               <img src={m.posterUrl} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={m.title} />
-               <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                 {m.status}
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {Array.from({ length: 8 }).map((_, idx) => (
+            <MovieCardSkeleton key={idx} />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {movies.map(m => (
+            <div key={m._id} className="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700">
+               <div className="relative h-64 overflow-hidden">
+                 <img src={m.posterUrl} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={m.title} />
+                 <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                   {m.status}
+                 </div>
                </div>
-             </div>
-             <div className="p-4">
-                <h3 className="font-bold text-lg text-gray-900 dark:text-white truncate mb-1">{m.title}</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{m.genre} • {m.duration} mins</p>
-                
-                <div className="flex gap-2">
-                  <button onClick={() => handleOpenEdit(m)} className="flex-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 py-2 rounded-lg text-sm font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/50 transition">
-                    Edit
-                  </button>
-                  <button onClick={() => handleDelete(m._id)} className="flex-1 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 py-2 rounded-lg text-sm font-semibold hover:bg-red-100 dark:hover:bg-red-900/50 transition">
-                    Delete
-                  </button>
-                </div>
-             </div>
-          </div>
-        ))}
-      </div>
+               <div className="p-4">
+                  <h3 className="font-bold text-lg text-gray-900 dark:text-white truncate mb-1">{m.title}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{m.genre} • {m.duration} mins</p>
+                  
+                  <div className="flex gap-2">
+                    <button onClick={() => handleOpenEdit(m)} className="flex-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 py-2 rounded-lg text-sm font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/50 transition">
+                      Edit
+                    </button>
+                    <button onClick={() => handleDelete(m._id)} className="flex-1 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 py-2 rounded-lg text-sm font-semibold hover:bg-red-100 dark:hover:bg-red-900/50 transition">
+                      Delete
+                    </button>
+                  </div>
+               </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Existing Movie Modal */}
       {isModalOpen && (

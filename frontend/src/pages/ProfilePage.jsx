@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { getProfile, updateProfile, changePassword } from '../services/profileService';
 import TicketCard from '../components/Booking/TicketCard';
 import QRModal from '../components/Booking/QRModal';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { FaTicketAlt, FaUser, FaLock, FaEye, FaEyeSlash, FaSave, FaTimes } from 'react-icons/fa';
 
 const ProfilePage = () => {
@@ -174,10 +175,7 @@ const ProfilePage = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <div className="w-14 h-14 border-4 border-red-600 dark:border-red-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-lg text-gray-600 dark:text-gray-400">Loading...</p>
-        </div>
+        <LoadingSpinner size="large" text="Loading Profile..." />
       </div>
     );
   }

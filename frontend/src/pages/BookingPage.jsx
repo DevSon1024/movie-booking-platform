@@ -5,6 +5,7 @@ import api from "../services/api";
 import toast from "react-hot-toast";
 import { QRCodeSVG } from 'qrcode.react';
 import { format } from 'date-fns';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { 
   FaCreditCard, 
   FaArrowLeft, 
@@ -104,10 +105,7 @@ const BookingPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-red-600 dark:border-red-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading Cinema Hall...</p>
-        </div>
+        <LoadingSpinner size="large" text="Loading Cinema Hall..." />
       </div>
     );
   }

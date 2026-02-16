@@ -9,6 +9,8 @@ import {
   canReviewMovie 
 } from '../services/reviewService';
 import toast from 'react-hot-toast';
+import LoadingSpinner from './LoadingSpinner';
+import { ReviewSkeleton } from './SkeletonLoader';
 
 const Reviews = ({ movieId, movieStatus }) => {
   const { userInfo } = useSelector((state) => state.auth);
@@ -177,9 +179,12 @@ const Reviews = ({ movieId, movieStatus }) => {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-8 text-center">
-        <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-        <p className="text-base text-gray-500 dark:text-gray-400 mt-3">Loading reviews...</p>
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-8">
+        <div className="space-y-6">
+          {Array.from({ length: 3 }).map((_, idx) => (
+            <ReviewSkeleton key={idx} />
+          ))}
+        </div>
       </div>
     );
   }
@@ -299,9 +304,13 @@ const Reviews = ({ movieId, movieStatus }) => {
               <button
                 type="submit"
                 disabled={submitting || rating === 0}
-                className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-bold text-base transition-all"
+                className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2"
               >
-                {submitting ? 'Submitting...' : editingReview ? 'Update Review' : 'Submit Review'}
+                {submitting ? (
+                  <LoadingSpinner size="small" />
+                ) : (
+                  editingReview ? 'Update Review' : 'Submit Review'
+                )}
               </button>
               <button
                 type="button"

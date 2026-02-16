@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
 import { register, clearError } from "../redux/slices/authSlice";
 import toast from "react-hot-toast";
+import LoadingSpinner from '../components/LoadingSpinner';
 import { FaUser, FaEnvelope, FaLock, FaUserPlus } from "react-icons/fa";
 
 const RegisterPage = () => {
@@ -162,7 +163,7 @@ const RegisterPage = () => {
               className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 dark:from-red-500 dark:to-red-600 dark:hover:from-red-600 dark:hover:to-red-700 text-white font-bold py-3 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 mt-6"
             >
               {loading ? (
-                <span>Creating Account...</span>
+                <LoadingSpinner size="small" />
               ) : (
                 <>
                   <FaUserPlus />

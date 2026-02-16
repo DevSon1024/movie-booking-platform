@@ -25,7 +25,16 @@ export default {
            card: '#ffffff', // White
            text: '#1f2937', // Gray-800
         }
-      }
+      },
+      keyframes: {
+        shimmer: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
+        },
+      },
+      animation: {
+        shimmer: 'shimmer 2s infinite',
+      },
     },
   },
   plugins: [],

@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux'; 
 import { FaFilm, FaTicketAlt, FaMoneyBillWave, FaFilter } from 'react-icons/fa';
 import { getAdminStats } from '../../services/adminService';
+import LoadingSpinner from '../../components/LoadingSpinner';
+import { AnalyticsCardSkeleton } from '../../components/SkeletonLoader';
 
 const AdminOverview = () => {
   const { currencySymbol } = useSelector((state) => state.settings);
@@ -56,7 +58,11 @@ const AdminOverview = () => {
       </div>
 
       {loading ? (
-        <p className="text-center text-gray-500">Loading analytics...</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {Array.from({ length: 3 }).map((_, idx) => (
+            <AnalyticsCardSkeleton key={idx} />
+          ))}
+        </div>
       ) : error ? (
         <p className="text-center text-red-500">{error}</p>
       ) : (

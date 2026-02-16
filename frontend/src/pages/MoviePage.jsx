@@ -6,6 +6,7 @@ import { getShows } from '../services/showService';
 import citiesData from '../data/cities.json';
 import Reviews from '../components/Reviews';
 import CachedImage from '../components/CachedImage';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { 
   FaClock, 
   FaMapMarkerAlt, 
@@ -170,10 +171,7 @@ const MoviePage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-14 h-14 border-4 border-red-600 dark:border-red-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-lg text-gray-600 dark:text-gray-400">Loading Movie...</p>
-        </div>
+        <LoadingSpinner size="large" text="Loading Movie..." />
       </div>
     );
   }

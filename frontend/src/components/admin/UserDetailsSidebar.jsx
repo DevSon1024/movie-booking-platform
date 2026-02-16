@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { FaTimes, FaTicketAlt, FaSpinner, FaCalendarAlt, FaMapMarkerAlt, FaMoneyBillWave, FaChartLine, FaStar } from 'react-icons/fa';
+import { FaTimes, FaTicketAlt, FaCalendarAlt, FaMapMarkerAlt, FaMoneyBillWave, FaChartLine, FaStar } from 'react-icons/fa';
 import { getUserDetails, getUserStats } from '../../services/userService';
 import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
+import LoadingSpinner from '../LoadingSpinner';
 
 const UserDetailsSidebar = ({ userId, onClose, onUserDeleted }) => {
   const { currencySymbol } = useSelector((state) => state.settings);
@@ -42,7 +43,7 @@ const UserDetailsSidebar = ({ userId, onClose, onUserDeleted }) => {
   if (loading) {
     return (
       <div className="fixed inset-y-0 right-0 w-full md:w-[600px] bg-white dark:bg-gray-800 shadow-2xl z-50 flex items-center justify-center">
-        <FaSpinner className="animate-spin text-4xl text-red-600" />
+        <LoadingSpinner size="large" text="Loading user details..." />
       </div>
     );
   }

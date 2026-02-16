@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
 import { login, clearError } from "../redux/slices/authSlice";
 import toast from "react-hot-toast";
+import LoadingSpinner from '../components/LoadingSpinner';
 import { FaEnvelope, FaLock, FaSignInAlt } from "react-icons/fa";
 
 const LoginPage = () => {
@@ -98,7 +99,7 @@ const LoginPage = () => {
               className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 dark:from-red-500 dark:to-red-600 dark:hover:from-red-600 dark:hover:to-red-700 text-white font-bold py-3 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading ? (
-                <span>Signing In...</span>
+                <LoadingSpinner size="small" />
               ) : (
                 <>
                   <FaSignInAlt />
