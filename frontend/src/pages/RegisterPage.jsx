@@ -168,10 +168,10 @@ const RegisterPage = () => {
                   type="button"
                   className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer transition-colors"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
                 >
                   {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
-                </button>
-              </div>
+                </button>              </div>
             </div>
 
             {/* Submit Button */}
