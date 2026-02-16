@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
+import CachedImage from '../components/CachedImage';
 import { FaTicketAlt, FaStar, FaCalendarAlt, FaPlay, FaChevronRight, FaChevronLeft, FaGlobe, FaClock, FaFire } from 'react-icons/fa';
 
 const HomePage = () => {
@@ -133,10 +134,12 @@ const HomePage = () => {
 
               <div className="hidden md:flex w-1/2 justify-center items-center pr-10 relative">
                   <div className="relative w-[340px] h-[500px] perspective-1000 group-hover:perspective-none transition-all duration-500">
-                      <img 
+                      <CachedImage 
                         src={trendingMovies[currentHeroSlide].posterUrl} 
                         alt={trendingMovies[currentHeroSlide].title} 
                         className="w-full h-full object-cover rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.6)] transform rotate-2 group-hover:rotate-0 transition-all duration-700 ease-out border-4 border-white/5"
+                        fallbackSrc="/placeholder-movie.svg"
+                        lazy={false}
                       />
                   </div>
               </div>
@@ -190,8 +193,13 @@ const HomePage = () => {
                         <div key={movie._id} className="min-w-[100%] md:min-w-[50%] lg:min-w-[25%] px-3">
                             <Link to={`/movie/${movie._id}`} className="block group relative rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 h-full bg-white dark:bg-gray-800">
                                 <div className="aspect-[2/3] overflow-hidden">
-                                    <img src={movie.posterUrl} alt={movie.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition duration-300 flex flex-col items-center justify-center p-4">
+                            <CachedImage 
+                              src={movie.posterUrl} 
+                              alt={movie.title} 
+                              className="w-full h-full object-cover group-hover:scale-105 transition duration-500" 
+                              fallbackSrc="/placeholder-movie.svg"
+                            />
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition duration-300 flex flex-col items-center justify-center p-4">
                                         <span className="bg-red-600 text-white px-6 py-2 rounded-full font-bold mb-3 transform translate-y-4 group-hover:translate-y-0 transition duration-300">Book Now</span>
                                         <p className="text-white text-center text-sm line-clamp-3 px-2 transform translate-y-4 group-hover:translate-y-0 transition duration-300 delay-75">
                                             {movie.description}
@@ -247,10 +255,11 @@ const HomePage = () => {
               className="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-800 flex flex-col h-full"
             >
               <div className="relative aspect-[2/3] overflow-hidden">
-                <img 
+                <CachedImage 
                   src={movie.posterUrl} 
                   alt={movie.title} 
                   className="w-full h-full object-cover group-hover:scale-110 transition duration-700 ease-in-out"
+                  fallbackSrc="/placeholder-movie.svg"
                 />
                 <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm text-white px-2 py-1 text-xs font-bold rounded uppercase">
                     {movie.language}

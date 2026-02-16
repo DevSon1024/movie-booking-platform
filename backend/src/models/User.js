@@ -20,6 +20,22 @@ const userSchema = new mongoose.Schema({
         enum: ['user','admin'],
         default: 'user',
     },
+    city: {
+        type: String,
+        default: '',
+    },
+    phone: {
+        type: String,
+        default: '',
+    },
+    isActive: {
+        type: Boolean,
+        default: true,
+    },
+    lastLogin: {
+        type: Date,
+        default: null,
+    },
 },{
     timestamps: true,
 });

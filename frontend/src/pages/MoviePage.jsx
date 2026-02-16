@@ -5,6 +5,7 @@ import api from '../services/api';
 import { getShows } from '../services/showService';
 import citiesData from '../data/cities.json';
 import Reviews from '../components/Reviews';
+import CachedImage from '../components/CachedImage';
 import { 
   FaClock, 
   FaMapMarkerAlt, 
@@ -217,10 +218,12 @@ const MoviePage = () => {
 
           <div className="flex flex-col md:flex-row gap-8 md:gap-12 items-center md:items-start">
             <div className="flex-shrink-0 group perspective-1000">
-              <img 
+              <CachedImage 
                 src={movie.posterUrl} 
                 alt={movie.title} 
                 className="w-56 md:w-72 rounded-xl shadow-2xl border-2 border-gray-700 dark:border-gray-800 group-hover:rotate-1 transition-transform duration-500" 
+                fallbackSrc="/placeholder-movie.svg"
+                lazy={false}
               />
             </div>
 
@@ -296,11 +299,11 @@ const MoviePage = () => {
                    {movie.cast.map((person, idx) => (
                      <div key={`cast-${idx}`} className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm hover:shadow-md border border-gray-100 dark:border-gray-800 transition-all group">
                        <div className="h-36 sm:h-44 overflow-hidden">
-                         <img 
+                         <CachedImage 
                            src={person.image} 
                            alt={person.name} 
                            className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                           onError={(e) => {e.target.src = 'https://via.placeholder.com/150?text=No+Image'}}
+                           fallbackSrc="/placeholder-movie.svg"
                          />
                        </div>
                        <div className="p-3 text-center">

@@ -1,0 +1,40 @@
+<svg width="400" height="600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="400" height="600" fill="#1f2937"/>
+  
+  <!-- Film Reel Icon -->
+  <g transform="translate(200, 250)">
+    <!-- Outer circle -->
+    <circle cx="0" cy="0" r="50" fill="none" stroke="#9ca3af" stroke-width="4"/>
+    
+    <!-- Inner circle -->
+    <circle cx="0" cy="0" r="20" fill="none" stroke="#9ca3af" stroke-width="4"/>
+    
+    <!-- Spokes -->
+    <line x1="0" y1="-20" x2="0" y2="-50" stroke="#9ca3af" stroke-width="3"/>
+    <line x1="0" y1="20" x2="0" y2="50" stroke="#9ca3af" stroke-width="3"/>
+    <line x1="-20" y1="0" x2="-50" y2="0" stroke="#9ca3af" stroke-width="3"/>
+    <line x1="20" y1="0" x2="50" y2="0" stroke="#9ca3af" stroke-width="3"/>
+    
+    <!-- Diagonal spokes -->
+    <line x1="-14" y1="-14" x2="-35" y2="-35" stroke="#9ca3af" stroke-width="3"/>
+    <line x1="14" y1="14" x2="35" y2="35" stroke="#9ca3af" stroke-width="3"/>
+    <line x1="14" y1="-14" x2="35" y2="-35" stroke="#9ca3af" stroke-width="3"/>
+    <line x1="-14" y1="14" x2="-35" y2="35" stroke="#9ca3af" stroke-width="3"/>
+    
+    <!-- Holes around the edge -->
+    <circle cx="0" cy="-40" r="5" fill="#374151"/>
+    <circle cx="0" cy="40" r="5" fill="#374151"/>
+    <circle cx="-40" cy="0" r="5" fill="#374151"/>
+    <circle cx="40" cy="0" r="5" fill="#374151"/>
+    <circle cx="-28" cy="-28" r="5" fill="#374151"/>
+    <circle cx="28" cy="28" r="5" fill="#374151"/>
+    <circle cx="28" cy="-28" r="5" fill="#374151"/>
+    <circle cx="-28" cy="28" r="5" fill="#374151"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="200" y="360" font-family="Arial, sans-serif" font-size="18" fill="#9ca3af" text-anchor="middle" font-weight="500">
+    No Image Available
+  </text>
+</svg>

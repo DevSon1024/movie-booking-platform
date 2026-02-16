@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { FaFilm, FaTheaterMasks, FaCalendarAlt, FaCog, FaChartLine, FaBars, FaTimes } from 'react-icons/fa';
+import { FaFilm, FaTheaterMasks, FaCalendarAlt, FaCog, FaChartLine, FaBars, FaTimes, FaUsers } from 'react-icons/fa';
 
 const AdminDashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -15,6 +15,7 @@ const AdminDashboard = () => {
 
   const navItems = [
     { path: '/admin', label: 'Dashboard', icon: <FaChartLine /> },
+    { path: '/admin/users', label: 'Users', icon: <FaUsers /> },
     { path: '/admin/movies', label: 'Movies', icon: <FaFilm /> },
     { path: '/admin/theatres', label: 'Theatres', icon: <FaTheaterMasks /> },
     { path: '/admin/shows', label: 'Shows', icon: <FaCalendarAlt /> },
