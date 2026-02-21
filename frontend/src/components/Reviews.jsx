@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { FaStar, FaTrash, FaEdit, FaTimes, FaCheckCircle, FaUserCircle } from 'react-icons/fa';
+import { FaStar, FaTrash, FaEdit, FaTimes, FaCheckCircle, FaUserCircle, FaThumbsUp, FaThumbsDown } from 'react-icons/fa';
 import { 
   getMovieReviews, 
   createReview, 
   updateReview, 
   deleteReview,
-  canReviewMovie 
+  canReviewMovie,
+  voteReview
 } from '../services/reviewService';
 import toast from 'react-hot-toast';
 import LoadingSpinner from './LoadingSpinner';
@@ -135,6 +136,53 @@ const Reviews = ({ movieId, movieStatus }) => {
     setRating(0);
     setComment('');
     setShowReviewForm(false);
+  };
+
+  const handleVote = async (reviewId, action) => {
+    if (!userInfo) {
+       toast.error('Please login to vote on reviews');
+       return;
+    }
+
+    // Optimistic UI Update
+    setReviews(prevReviews => prevReviews.map(review => {
+       if (review._id !== reviewId) return review;
+
+       const isLiking = action === 'like';
+       const isDisliking = action === 'dislike';
+       const hasLiked = review.likes?.includes(userInfo._id);
+       const hasDisliked = review.dislikes?.includes(userInfo._id);
+
+       let newLikes = [...(review.likes || [])];
+       let newDislikes = [...(review.dislikes || [])];
+
+       if (isLiking) {
+          if (hasLiked) {
+             newLikes = newLikes.filter(id => id !== userInfo._id); // Undo like
+          } else {
+             newLikes.push(userInfo._id);
+             if (hasDisliked) newDislikes = newDislikes.filter(id => id !== userInfo._id);
+          }
+       } else if (isDisliking) {
+          if (hasDisliked) {
+             newDislikes = newDislikes.filter(id => id !== userInfo._id); // Undo dislike
+          } else {
+             newDislikes.push(userInfo._id);
+             if (hasLiked) newLikes = newLikes.filter(id => id !== userInfo._id);
+          }
+       }
+
+       return { ...review, likes: newLikes, dislikes: newDislikes };
+    }));
+
+    // API Call
+    try {
+       await voteReview(reviewId, action);
+    } catch (error) {
+       // Revert on failure
+       fetchReviews();
+       toast.error('Failed to register vote');
+    }
   };
 
   const formatDate = (dateString) => {
@@ -396,6 +444,30 @@ const Reviews = ({ movieId, movieStatus }) => {
                 <p className="text-base text-gray-700 dark:text-gray-300 leading-relaxed ml-16">
                   {review.comment}
                 </p>
+                <div className="ml-16 mt-4 flex items-center gap-4 border-t border-gray-100 dark:border-gray-600/50 pt-3">
+                   <button 
+                     onClick={() => handleVote(review._id, 'like')}
+                     className={`flex items-center gap-2 text-sm font-medium transition-all active:scale-[0.9] ${
+                       review.likes?.includes(userInfo?._id)
+                         ? 'text-blue-600 dark:text-blue-400'
+                         : 'text-gray-500 hover:text-blue-600 dark:hover:text-blue-400'
+                     }`}
+                   >
+                      <FaThumbsUp className={review.likes?.includes(userInfo?._id) ? 'animate-bounce-short' : ''} /> 
+                      {review.likes?.length || 0}
+                   </button>
+                   <button 
+                     onClick={() => handleVote(review._id, 'dislike')}
+                     className={`flex items-center gap-2 text-sm font-medium transition-all active:scale-[0.9] ${
+                       review.dislikes?.includes(userInfo?._id)
+                         ? 'text-red-600 dark:text-red-400'
+                         : 'text-gray-500 hover:text-red-600 dark:hover:text-red-400'
+                     }`}
+                   >
+                      <FaThumbsDown className={review.dislikes?.includes(userInfo?._id) ? 'animate-bounce-short' : ''} /> 
+                      {review.dislikes?.length || 0}
+                   </button>
+                </div>
               </div>
             ))}
           </div>

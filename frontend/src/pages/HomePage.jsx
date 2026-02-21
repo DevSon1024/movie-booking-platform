@@ -192,16 +192,21 @@ const HomePage = () => {
            onMouseEnter={() => setIsHoveredHero(true)}
            onMouseLeave={() => setIsHoveredHero(false)}
         >
-           {/* Crossfading Backgrounds */}
+           {/* Crossfading Backgrounds with Edged Blurs via CSS Mask */}
            {trendingMovies.map((movie, index) => (
              <div 
                key={`bg-${movie._id}`}
                className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out blur-sm transform scale-105 ${currentHeroSlide === index ? 'opacity-40 z-0' : 'opacity-0 -z-10'}`}
-               style={{ backgroundImage: `url(${movie.posterUrl})` }}
+               style={{ 
+                 backgroundImage: `url(${movie.posterUrl})`,
+                 WebkitMaskImage: 'linear-gradient(to right, transparent, black 15%, black 85%, transparent), linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)',
+                 WebkitMaskComposite: 'source-in',
+                 maskImage: 'linear-gradient(to right, transparent, black 15%, black 85%, transparent), linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)',
+                 maskComposite: 'intersect'
+               }}
              ></div>
            ))}
            
-           <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-900/90 to-transparent z-10 pointer-events-none"></div>
            <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent z-10 pointer-events-none"></div>
 
            {/* Carousel Controls */}
@@ -326,7 +331,7 @@ const HomePage = () => {
                             <CachedImage 
                               src={movie.posterUrl} 
                               alt={movie.title} 
-                              className="w-full h-full object-cover group-hover:scale-105 transition duration-500" 
+                              className="w-full h-full object-cover" 
                               fallbackSrc="/placeholder-movie.svg"
                             />
                             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition duration-300 flex flex-col items-center justify-center p-4">
@@ -391,7 +396,7 @@ const HomePage = () => {
                 <CachedImage 
                   src={movie.posterUrl} 
                   alt={movie.title} 
-                  className="w-full h-full object-cover group-hover:scale-110 group-hover:blur-[2px] transition duration-700 ease-in-out"
+                  className="w-full h-full object-cover"
                   fallbackSrc="/placeholder-movie.svg"
                 />
                 <div className="absolute top-2 left-2 bg-red-600/90 backdrop-blur-sm text-white px-2 py-1 text-[10px] sm:text-xs font-bold rounded uppercase shadow-md z-10 transition-opacity group-hover:opacity-0">

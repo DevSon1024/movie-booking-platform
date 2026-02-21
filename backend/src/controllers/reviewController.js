@@ -250,11 +250,75 @@ const canReviewMovie = async (req, res) => {
   }
 };
 
+// @desc    Toggle upvote or downvote on a review
+// @route   PUT /api/reviews/:reviewId/vote
+// @access  Private
+const toggleVoteReview = async (req, res) => {
+  try {
+    const { action } = req.body; // 'like' or 'dislike'
+    
+    if (!['like', 'dislike'].includes(action)) {
+       return res.status(400).json({ message: 'Invalid vote action' });
+    }
+
+    const review = await Review.findById(req.params.reviewId);
+
+    if (!review) {
+      return res.status(404).json({ message: 'Review not found' });
+    }
+
+    const userId = req.user._id;
+
+    // Check if the user is interacting with their own review
+    if (review.user.toString() === userId.toString()) {
+       return res.status(403).json({ message: 'You cannot vote on your own review' });
+    }
+
+    const hasLiked = review.likes.includes(userId);
+    const hasDisliked = review.dislikes.includes(userId);
+
+    if (action === 'like') {
+      if (hasLiked) {
+        // Undo like
+        review.likes.pull(userId);
+      } else {
+        // Add like, remove dislike if exists
+        review.likes.push(userId);
+        if (hasDisliked) review.dislikes.pull(userId);
+      }
+    } else if (action === 'dislike') {
+      if (hasDisliked) {
+        // Undo dislike
+        review.dislikes.pull(userId);
+      } else {
+        // Add dislike, remove like if exists
+        review.dislikes.push(userId);
+        if (hasLiked) review.likes.pull(userId);
+      }
+    }
+
+    await review.save();
+    
+    // We return the updated counts and user status
+    res.json({ 
+      message: 'Vote updated',
+      likes: review.likes.length,
+      dislikes: review.dislikes.length,
+      userVote: review.likes.includes(userId) ? 'like' : (review.dislikes.includes(userId) ? 'dislike' : null)
+    });
+    
+  } catch (error) {
+    console.error('Vote Review Error:', error);
+    res.status(500).json({ message: 'Server error while processing vote' });
+  }
+};
+
 export { 
   createReview, 
   getMovieReviews, 
   updateReview, 
   deleteReview, 
   getMyReviews,
-  canReviewMovie 
+  canReviewMovie,
+  toggleVoteReview
 };

@@ -29,3 +29,8 @@ export const canReviewMovie = async (movieId) => {
   const response = await api.get(`/reviews/can-review/${movieId}`);
   return response.data;
 };
+
+export const voteReview = async (reviewId, action) => {
+  const response = await api.put(`/reviews/${reviewId}/vote`, { action });
+  return response.data;
+};

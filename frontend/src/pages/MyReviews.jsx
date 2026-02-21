@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getMyReviews, deleteReview, updateReview } from '../services/reviewService';
-import { FaStar, FaTrash, FaEdit, FaList, FaTh, FaCalendarAlt, FaQuoteLeft } from 'react-icons/fa';
+import { FaStar, FaTrash, FaEdit, FaList, FaTh, FaCalendarAlt, FaQuoteLeft, FaThumbsUp, FaThumbsDown } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -131,8 +131,8 @@ const MyReviews = () => {
                     </div>
                 </div>
 
-                {/* Review Content */}
-                <div className="p-5 flex-1">
+                {/* Review Content & Stats */}
+                <div className="p-5 flex-1 flex flex-col justify-between">
                     {editingId === review._id ? (
                         <textarea 
                             value={editComment}
@@ -140,11 +140,24 @@ const MyReviews = () => {
                             className="w-full h-32 p-3 border rounded bg-gray-50 dark:bg-gray-900 text-sm focus:ring-2 focus:ring-red-500"
                         />
                     ) : (
-                        <div className="relative pl-6">
+                        <div className="relative pl-6 mb-4">
                             <FaQuoteLeft className="absolute top-0 left-0 text-gray-200 dark:text-gray-700 text-xl" />
                             <p className="text-gray-600 dark:text-gray-300 text-base leading-relaxed italic">
                                 "{review.comment}"
                             </p>
+                        </div>
+                    )}
+
+                    {!editingId && (
+                        <div className="flex items-center gap-6 mt-auto pt-4 border-t border-gray-100 dark:border-gray-700">
+                           <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 font-medium">
+                              <FaThumbsUp className="text-blue-500" />
+                              {review.likes?.length || 0} Likes
+                           </div>
+                           <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 font-medium">
+                              <FaThumbsDown className="text-red-500" />
+                              {review.dislikes?.length || 0} Dislikes
+                           </div>
                         </div>
                     )}
                 </div>

@@ -31,6 +31,14 @@ const reviewSchema = new mongoose.Schema({
     type: Number,
     default: 0, // For future: users can mark reviews as helpful
   },
+  likes: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  dislikes: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   isEdited: {
     type: Boolean,
     default: false,
