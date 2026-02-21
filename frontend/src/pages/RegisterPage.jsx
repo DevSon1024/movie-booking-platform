@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { register, clearError } from "../redux/slices/authSlice";
 import toast from "react-hot-toast";
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -20,7 +20,10 @@ const RegisterPage = () => {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { userInfo, loading, error } = useSelector((state) => state.auth);
+
+  const from = location.state?.from?.pathname || "/";
 
   useEffect(() => {
     if (userInfo) {
@@ -29,7 +32,7 @@ const RegisterPage = () => {
       if (userInfo.role === "admin") {
         navigate("/admin");
       } else {
-        navigate("/");
+        navigate(from, { replace: true });
       }
     }
     if (error) {
@@ -197,6 +200,7 @@ const RegisterPage = () => {
               Already have an account?{" "}
               <Link
                 to="/login"
+                state={{ from: location.state?.from }}
                 className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-semibold transition-colors"
               >
                 Login here
