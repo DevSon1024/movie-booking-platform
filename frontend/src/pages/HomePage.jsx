@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import api from '../services/api';
 import CachedImage from '../components/CachedImage';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -11,7 +12,11 @@ import useDocumentTitle from '../hooks/useDocumentTitle';
 
 const HomePage = () => {
   useDocumentTitle('Home');
+  const navigate = useNavigate();
+  const { userInfo } = useSelector((state) => state.auth);
+  
   const [movies, setMovies] = useState([]);
+  const [userReviewedMovieIds, setUserReviewedMovieIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('ALL');
@@ -22,6 +27,7 @@ const HomePage = () => {
   // Carousel states
   const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
   const [nowShowingIndex, setNowShowingIndex] = useState(0);
+  const [isHoveredHero, setIsHoveredHero] = useState(false);
 
   useEffect(() => {
     const fetchMovies = async () => {
@@ -36,6 +42,23 @@ const HomePage = () => {
     };
     fetchMovies();
   }, []);
+
+  useEffect(() => {
+    const fetchUserReviews = async () => {
+      if (userInfo) {
+        try {
+          const { data } = await api.get('/reviews/my-reviews');
+          const ratedMovieIds = data.map(review => typeof review.movie === 'object' ? review.movie._id : review.movie);
+          setUserReviewedMovieIds(ratedMovieIds);
+        } catch (error) {
+          console.error("Failed to fetch user reviews", error);
+        }
+      } else {
+          setUserReviewedMovieIds([]);
+      }
+    };
+    fetchUserReviews();
+  }, [userInfo]);
 
   const filteredMovies = useMemo(() => {
     return movies.filter(movie => {
@@ -59,21 +82,27 @@ const HomePage = () => {
   const itemsPerSlide = 4;
 
   useEffect(() => {
+    if (isHoveredHero) return;
     const timer = setInterval(() => {
         setCurrentHeroSlide((prev) => (prev + 1) % (trendingMovies.length || 1));
-    }, 6000);
+    }, 8000);
     return () => clearInterval(timer);
-  }, [trendingMovies]);
+  }, [trendingMovies, isHoveredHero]);
 
   const nextNowShowing = () => {
     if (nowShowingIndex + itemsPerSlide < nowShowingMovies.length) {
-      setNowShowingIndex(nowShowingIndex + 1);
+      setNowShowingIndex(nowShowingIndex + itemsPerSlide);
+    } else {
+      const remaining = nowShowingMovies.length - itemsPerSlide;
+      setNowShowingIndex(remaining > 0 ? remaining : 0);
     }
   };
 
   const prevNowShowing = () => {
-    if (nowShowingIndex > 0) {
-      setNowShowingIndex(nowShowingIndex - 1);
+    if (nowShowingIndex - itemsPerSlide >= 0) {
+      setNowShowingIndex(nowShowingIndex - itemsPerSlide);
+    } else {
+      setNowShowingIndex(0);
     }
   };
 
@@ -158,44 +187,67 @@ const HomePage = () => {
       
       {/* --- HERO SECTION (TRENDING) --- */}
       {trendingMovies.length > 0 && (
-        <div className="relative w-full h-[550px] overflow-hidden group bg-gray-900">
-           <div 
-             className="absolute inset-0 bg-cover bg-center transition-all duration-1000 ease-in-out opacity-30 blur-sm transform scale-105"
-             style={{ backgroundImage: `url(${trendingMovies[currentHeroSlide].posterUrl})` }}
-           ></div>
+        <div 
+           className="relative w-full h-[550px] md:h-[600px] overflow-hidden group bg-gray-900"
+           onMouseEnter={() => setIsHoveredHero(true)}
+           onMouseLeave={() => setIsHoveredHero(false)}
+        >
+           {/* Crossfading Backgrounds */}
+           {trendingMovies.map((movie, index) => (
+             <div 
+               key={`bg-${movie._id}`}
+               className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out blur-sm transform scale-105 ${currentHeroSlide === index ? 'opacity-40 z-0' : 'opacity-0 -z-10'}`}
+               style={{ backgroundImage: `url(${movie.posterUrl})` }}
+             ></div>
+           ))}
            
-           <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-900/95 to-transparent"></div>
-           <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent"></div>
+           <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-900/90 to-transparent z-10 pointer-events-none"></div>
+           <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent z-10 pointer-events-none"></div>
 
-           <div className="absolute inset-0 container mx-auto px-6 flex items-center justify-between z-10">
-              <div className="w-full md:w-1/2 lg:w-5/12 flex flex-col items-start animate-fade-in-up pl-4 md:pl-8">
-                  <span className="bg-gradient-to-r from-red-600 to-red-800 text-white px-4 py-1.5 rounded text-sm font-bold uppercase tracking-wide mb-6 shadow-xl flex items-center gap-2">
+           {/* Carousel Controls */}
+           <button 
+              onClick={() => setCurrentHeroSlide((prev) => (prev - 1 + trendingMovies.length) % trendingMovies.length)}
+              className="absolute left-4 md:left-8 top-1/2 transform -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white rounded-full p-3 md:p-4 backdrop-blur-md transition-all opacity-0 group-hover:opacity-100 hidden sm:block z-30"
+           >
+              <FaChevronLeft size={24} />
+           </button>
+           <button 
+              onClick={() => setCurrentHeroSlide((prev) => (prev + 1) % trendingMovies.length)}
+              className="absolute right-4 md:right-8 top-1/2 transform -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white rounded-full p-3 md:p-4 backdrop-blur-md transition-all opacity-0 group-hover:opacity-100 hidden sm:block z-30"
+           >
+              <FaChevronRight size={24} />
+           </button>
+
+           <div className="absolute inset-0 container mx-auto px-6 flex items-center justify-between z-20">
+              <div className="w-full md:w-1/2 lg:w-5/12 flex flex-col items-start transition-all pl-4 md:pl-12">
+                  <span className="bg-gradient-to-r from-red-600 to-red-800 text-white px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider mb-6 shadow-lg shadow-red-500/30 flex items-center gap-2 animate-fade-in-up" key={`badge-${currentHeroSlide}`}>
                      <FaFire /> Trending #{currentHeroSlide + 1}
                   </span>
-                  <h1 className="text-4xl md:text-4xl font-extrabold text-white mb-6 drop-shadow-2xl leading-tight">
+                  
+                  <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-6 drop-shadow-2xl leading-tight animate-fade-in-up" key={`title-${currentHeroSlide}`}>
                      {trendingMovies[currentHeroSlide].title}
                   </h1>
                   
-                  <div className="flex flex-wrap items-center text-gray-300 text-base mb-8 gap-4 md:gap-6">
-                     <span className="bg-white/10 px-3 py-1 rounded backdrop-blur-sm border border-white/10">{trendingMovies[currentHeroSlide].genre}</span>
-                     <span className="flex items-center gap-2"><FaClock /> {trendingMovies[currentHeroSlide].duration} mins</span>
-                     <span className="flex items-center gap-2"><FaGlobe /> {trendingMovies[currentHeroSlide].language}</span>
+                  <div className="flex flex-wrap items-center text-gray-200 text-sm md:text-base mb-8 gap-3 md:gap-5 animate-fade-in-up" key={`meta-${currentHeroSlide}`}>
+                     <span className="bg-white/10 px-4 py-1.5 rounded-full backdrop-blur-md border border-white/10 font-medium">{trendingMovies[currentHeroSlide].genre}</span>
+                     <span className="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-full backdrop-blur-sm"><FaClock className="text-red-500" /> {trendingMovies[currentHeroSlide].duration} mins</span>
+                     <span className="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-full backdrop-blur-sm"><FaGlobe className="text-blue-400" /> {trendingMovies[currentHeroSlide].language}</span>
                   </div>
 
-                  <p className="text-gray-300 text-md mb-8 line-clamp-3 max-w-xl hidden sm:block leading-relaxed">
+                  <p className="text-gray-300 text-base mb-8 line-clamp-3 max-w-xl hidden sm:block leading-relaxed animate-fade-in-up" key={`desc-${currentHeroSlide}`}>
                      {trendingMovies[currentHeroSlide].description}
                   </p>
 
-                  <div className="flex gap-5">
+                  <div className="flex gap-4 md:gap-5 animate-fade-in-up" key={`btn-${currentHeroSlide}`}>
                     <Link 
                         to={`/movie/${trendingMovies[currentHeroSlide]._id}`}
-                        className="bg-red-600 hover:bg-red-700 text-white px-10 py-4 rounded-full text-base font-bold flex items-center transition-all shadow-xl hover:scale-105"
+                        className="bg-red-600 shadow-lg shadow-red-600/40 hover:bg-red-700 text-white px-8 md:px-10 py-3.5 md:py-4 rounded-full text-base font-bold flex items-center transition-all hover:-translate-y-1"
                     >
                         <FaTicketAlt className="mr-2" /> Book Now
                     </Link>
                     <button 
                       onClick={() => handleWatchTrailer(trendingMovies[currentHeroSlide].trailerUrl)}
-                      className="bg-white/10 hover:bg-white/20 text-white border border-white/30 px-8 py-4 rounded-full text-base font-bold flex items-center transition backdrop-blur-md"
+                      className="bg-white/10 hover:bg-white/20 text-white border border-white/20 px-6 md:px-8 py-3.5 md:py-4 rounded-full text-base font-bold flex items-center transition-all backdrop-blur-md hover:-translate-y-1"
                     >
                         <FaPlay className="mr-2" /> Watch Trailer
                     </button>
@@ -203,24 +255,29 @@ const HomePage = () => {
               </div>
 
               <div className="hidden md:flex w-1/2 justify-center items-center pr-10 relative">
-                  <div className="relative w-[340px] h-[500px] perspective-1000 group-hover:perspective-none transition-all duration-500">
-                      <CachedImage 
-                        src={trendingMovies[currentHeroSlide].posterUrl} 
-                        alt={trendingMovies[currentHeroSlide].title} 
-                        className="w-full h-full object-cover rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.6)] transform rotate-2 group-hover:rotate-0 transition-all duration-700 ease-out border-4 border-white/5"
-                        fallbackSrc="/placeholder-movie.svg"
-                        lazy={false}
-                      />
-                  </div>
+                  {trendingMovies.map((movie, index) => (
+                      <div 
+                        key={`poster-${movie._id}`}
+                        className={`absolute w-[320px] lg:w-[350px] aspect-[2/3] perspective-1000 transition-all duration-1000 ease-out ${currentHeroSlide === index ? 'opacity-100 translate-x-0 scale-100 rotate-0 z-20' : 'opacity-0 translate-x-12 scale-95 rotate-6 z-0 pointer-events-none'}`}
+                      >
+                          <CachedImage 
+                            src={movie.posterUrl} 
+                            alt={movie.title} 
+                            className="w-full h-full object-contain rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.7)] border-4 border-transparent group-hover:border-white/10 transition-all duration-500 bg-transparent"
+                            fallbackSrc="/placeholder-movie.svg"
+                            lazy={false}
+                          />
+                      </div>
+                  ))}
               </div>
            </div>
 
-           <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-3 z-20">
+           <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex gap-3 z-30">
               {trendingMovies.map((_, idx) => (
                   <button 
                     key={idx} 
                     onClick={() => setCurrentHeroSlide(idx)}
-                    className={`h-2 rounded-full transition-all duration-300 ${currentHeroSlide === idx ? 'bg-red-600 w-10' : 'bg-gray-600 w-3 hover:bg-gray-400'}`}
+                    className={`h-2.5 rounded-full transition-all duration-500 cursor-pointer ${currentHeroSlide === idx ? 'bg-red-600 w-12 shadow-[0_0_10px_rgba(220,38,38,0.8)]' : 'bg-white/30 w-3 hover:bg-white/60'}`}
                   />
               ))}
            </div>
@@ -325,17 +382,45 @@ const HomePage = () => {
             <Link 
               to={`/movie/${movie._id}`} 
               key={movie._id} 
-              className="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-800 flex flex-col h-full"
+              className="group relative bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-300 border border-transparent dark:border-gray-800 hover:border-gray-200 dark:hover:border-gray-700 hover:-translate-y-1.5 flex flex-col h-full"
             >
               <div className="relative aspect-[2/3] overflow-hidden">
                 <CachedImage 
                   src={movie.posterUrl} 
                   alt={movie.title} 
-                  className="w-full h-full object-cover group-hover:scale-110 transition duration-700 ease-in-out"
+                  className="w-full h-full object-cover group-hover:scale-110 group-hover:blur-[2px] transition duration-700 ease-in-out"
                   fallbackSrc="/placeholder-movie.svg"
                 />
-                <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm text-white px-2 py-1 text-xs font-bold rounded uppercase">
+                <div className="absolute top-2 left-2 bg-red-600/90 backdrop-blur-sm text-white px-2 py-1 text-[10px] sm:text-xs font-bold rounded uppercase shadow-md z-10 transition-opacity group-hover:opacity-0">
+                    {movie.status === 'RUNNING' ? 'Now Showing' : movie.status === 'UPCOMING' ? 'Coming Soon' : movie.status}
+                </div>
+                <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm text-white px-2 py-1 text-[10px] sm:text-xs font-bold rounded uppercase z-10 transition-opacity group-hover:opacity-0">
                     {movie.language}
+                </div>
+                
+                {/* Dynamic Hover Overlay */}
+                <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center p-4 gap-3 z-20 backdrop-blur-[2px]">
+                    {movie.status === 'RUNNING' && (
+                       <button onClick={(e) => { e.preventDefault(); navigate(`/movie/${movie._id}`); }} className="bg-red-600 hover:bg-red-700 text-white w-36 py-2.5 rounded-full font-bold text-sm transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 shadow-lg shadow-red-600/30 flex items-center justify-center gap-2">
+                           <FaTicketAlt /> Book Now
+                       </button>
+                    )}
+                    
+                    {(movie.status === 'RUNNING' || movie.status === 'COMPLETED' || movie.status === 'ENDED') ? (
+                        userReviewedMovieIds.includes(movie._id) ? (
+                            <button onClick={(e) => { e.preventDefault(); navigate(`/movie/${movie._id}`); }} className="bg-white/10 hover:bg-white/20 border border-white/50 text-white w-36 py-2.5 rounded-full font-bold text-sm transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-75 backdrop-blur-md shadow-lg flex items-center justify-center gap-2">
+                                <FaPlay /> See Details
+                            </button>
+                        ) : (
+                            <button onClick={(e) => { e.preventDefault(); navigate(`/movie/${movie._id}#reviews`); }} className="bg-blue-600/90 hover:bg-blue-600 text-white w-36 py-2.5 rounded-full font-bold text-sm transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-75 shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2">
+                                <FaStar /> Rate Now
+                            </button>
+                        )
+                    ) : (
+                        <button onClick={(e) => { e.preventDefault(); navigate(`/movie/${movie._id}`); }} className="bg-white/10 hover:bg-white/20 border border-white/50 text-white w-36 py-2.5 rounded-full font-bold text-sm transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 shadow-lg backdrop-blur-md flex items-center justify-center gap-2">
+                            <FaPlay /> See Details
+                        </button>
+                    )}
                 </div>
               </div>
               

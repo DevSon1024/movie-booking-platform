@@ -27,6 +27,18 @@ const Navbar = () => {
 
   const dropdownRef = useRef(null);
   const searchRef = useRef(null);
+  const searchInputRef = useRef(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === '/' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -80,7 +92,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm sticky top-0 z-50 transition-colors duration-300">
+    <nav className="bg-white/85 dark:bg-gray-900/85 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-800/50 shadow-sm sticky top-0 z-50 transition-all duration-300">
       <div className="container mx-auto px-6">
         <div className="flex justify-between items-center h-20">
           
@@ -92,12 +104,13 @@ const Navbar = () => {
           <div className="flex-1 max-w-lg mx-8 relative" ref={searchRef}>
              <div className="relative">
                 <input 
+                    ref={searchInputRef}
                     type="text" 
-                    placeholder="Search movies..." 
+                    placeholder="Search movies (Press '/')" 
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onFocus={() => searchTerm && setShowResults(true)}
-                    className="w-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-none rounded-full py-2.5 pl-12 pr-4 focus:ring-2 focus:ring-red-500 transition text-base"
+                    className="w-full bg-gray-100/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-200 border border-transparent focus:border-red-500/30 rounded-full py-2.5 pl-12 pr-4 focus:ring-2 focus:ring-red-500/20 focus:outline-none transition-all shadow-inner text-base backdrop-blur-sm"
                 />
                 <FaSearch className="absolute left-4 top-3.5 text-gray-400" />
                 {isSearching && (
@@ -106,7 +119,7 @@ const Navbar = () => {
              </div>
 
              {showResults && searchResults.length > 0 && (
-                 <div className="absolute top-full left-0 w-full mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden z-50 animate-fade-in-up">
+                 <div className="absolute top-full left-0 w-full mt-2 bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg rounded-xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden z-50 animate-fade-in-up">
                      <div className="py-2">
                         {searchResults.map((movie) => (
                             <div 
@@ -154,7 +167,7 @@ const Navbar = () => {
                 </button>
 
                 {isProfileOpen && (
-                  <div className="absolute right-0 mt-3 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden animate-fade-in origin-top-right z-50">
+                  <div className="absolute right-0 mt-3 w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg rounded-xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden animate-fade-in origin-top-right z-50">
                     <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
                       <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">Signed in as</p>
                       <p className="text-base font-bold text-gray-900 dark:text-white truncate">{userInfo.email}</p>
@@ -173,10 +186,6 @@ const Navbar = () => {
                       
                       <Link to="/profile" className="flex items-center px-5 py-3 text-base text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700" onClick={() => setIsProfileOpen(false)}>
                         <FaUserCircle className="mr-3 text-gray-400" /> My Profile
-                      </Link>
-                      
-                      <Link to="/profile" className="flex items-center px-5 py-3 text-base text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700" onClick={() => setIsProfileOpen(false)}>
-                        <FaHistory className="mr-3 text-gray-400" /> My Tickets
                       </Link>
                       
                       <Link to="/my-reviews" className="flex items-center px-5 py-3 text-base text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700" onClick={() => setIsProfileOpen(false)}>
@@ -221,7 +230,7 @@ const Navbar = () => {
       </div>
 
       {isMobileOpen && (
-        <div className="md:hidden bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 absolute w-full left-0 shadow-xl animate-slide-down z-40">
+        <div className="md:hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border-t border-gray-200/50 dark:border-gray-800/50 absolute w-full left-0 shadow-2xl animate-slide-down z-40">
           <div className="flex flex-col p-4 space-y-2">
             <Link to="/" onClick={() => setIsMobileOpen(false)} className="block px-4 py-3 rounded-lg text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 text-base font-medium">
               🎬 Movies

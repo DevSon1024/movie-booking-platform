@@ -11,7 +11,7 @@
 * **Authentication:** Secure Login/Register using JWT & HTTP-Only Cookies.
 * **Browse Movies:** View "Now Showing" and "Upcoming" movies.
 * **Real-time Booking:** Select seats on a visual map.
-* **My Tickets:** View booking history and status.
+* **My Profile:** Update Profile Change Password and View booking history and status.
 * **Verified Reviews:** Users can only review a movie *after* the show has ended (verified via algorithm).
 
 ### 🛠 Admin Module

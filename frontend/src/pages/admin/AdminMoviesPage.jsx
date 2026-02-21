@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { FaEdit, FaTrash, FaPlus, FaSearch, FaUserTie } from 'react-icons/fa';
 import { getAdminMovies, createMovie, updateMovie, deleteMovie } from '../../services/movieService';
 import toast from 'react-hot-toast';
@@ -16,6 +16,19 @@ const AdminMoviesPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCelebrityModalOpen, setIsCelebrityModalOpen] = useState(false); // New State
   const [editingMovie, setEditingMovie] = useState(null);
+  const searchInputRef = useRef(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // '?' is Shift + /
+      if (e.key === '?' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => { 
     fetchMovies(); 
@@ -87,8 +100,12 @@ const AdminMoviesPage = () => {
 
       {/* Search */}
       <div className="relative mb-6">
+        <div className="absolute top-3.5 right-4 pointer-events-none">
+           <kbd className="hidden sm:inline-block bg-gray-100 dark:bg-gray-700 text-gray-400 text-xs px-2 py-0.5 rounded border border-gray-200 dark:border-gray-600 font-mono shadow-sm">Shift + /</kbd>
+        </div>
         <FaSearch className="absolute left-4 top-3.5 text-gray-400" />
         <input 
+          ref={searchInputRef}
           type="text" 
           placeholder="Search movies by title..." 
           className="w-full bg-white dark:bg-gray-800 pl-12 pr-4 py-3 rounded-xl border-none shadow-sm focus:ring-2 focus:ring-red-500 dark:text-white"

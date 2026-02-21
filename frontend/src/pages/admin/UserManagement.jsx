@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { FaUsers, FaSearch, FaEye, FaTrash } from 'react-icons/fa';
 import { getAllUsers, deleteUser } from '../../services/userService';
 import UserDetailsSidebar from '../../components/admin/UserDetailsSidebar';
@@ -15,6 +15,19 @@ const UserManagement = () => {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [showSidebar, setShowSidebar] = useState(false);
   const [deleting, setDeleting] = useState(null);
+  const searchInputRef = useRef(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // '?' is Shift + /
+      if (e.key === '?' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => {
     fetchUsers();
@@ -85,8 +98,12 @@ const UserManagement = () => {
 
         {/* Search */}
         <div className="relative w-full md:w-96">
+          <div className="absolute top-3.5 right-4 pointer-events-none">
+             <kbd className="hidden sm:inline-block bg-gray-100 dark:bg-gray-700 text-gray-400 text-xs px-2 py-0.5 rounded border border-gray-200 dark:border-gray-600 font-mono shadow-sm">Shift + /</kbd>
+          </div>
           <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
+            ref={searchInputRef}
             type="text"
             placeholder="Search by name, email, or city..."
             value={searchTerm}
