@@ -414,7 +414,18 @@ const HomePage = () => {
                        </button>
                     )}
                     
-                    {(movie.status === 'RUNNING' || movie.status === 'COMPLETED' || movie.status === 'ENDED') ? (
+                    {movie.status === 'ENDED' ? (
+                        <div className="flex flex-col gap-2 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-75 w-36">
+                          {!userReviewedMovieIds.includes(movie._id) && (
+                            <button onClick={(e) => { e.preventDefault(); navigate(`/movie/${movie._id}#reviews`); }} className="bg-blue-600/90 hover:bg-blue-600 text-white w-full py-2.5 rounded-full font-bold text-sm shadow-lg flex items-center justify-center gap-2">
+                                <FaStar /> Rate Now
+                            </button>
+                          )}
+                            <button onClick={(e) => { e.preventDefault(); navigate(`/movie/${movie._id}`); }} className="bg-green-600/90 hover:bg-green-600 text-white w-full py-2.5 rounded-full font-bold text-sm shadow-lg flex items-center justify-center gap-2 backdrop-blur-md">
+                                <FaPlay /> Watch Online
+                            </button>
+                        </div>
+                    ) : movie.status === 'RUNNING' || movie.status === 'COMPLETED' ? (
                         userReviewedMovieIds.includes(movie._id) ? (
                             <button onClick={(e) => { e.preventDefault(); navigate(`/movie/${movie._id}`); }} className="bg-white/10 hover:bg-white/20 border border-white/50 text-white w-36 py-2.5 rounded-full font-bold text-sm transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-75 backdrop-blur-md shadow-lg flex items-center justify-center gap-2">
                                 <FaPlay /> See Details

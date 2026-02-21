@@ -10,7 +10,7 @@ const MovieForm = ({ initialData, isEditing, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
     title: '', description: '', genre: '', duration: '', language: '', 
     releaseDate: '', posterUrl: '', trailerUrl: '', status: 'UPCOMING',
-    cast: [], crew: []
+    cast: [], crew: [], streamingLinks: []
   });
   
   // Poster Upload State
@@ -34,7 +34,8 @@ const MovieForm = ({ initialData, isEditing, onClose, onSubmit }) => {
           releaseDate: initialData.releaseDate ? initialData.releaseDate.split('T')[0] : '',
           trailerUrl: initialData.trailerUrl || '',
           cast: initialData.cast || [],
-          crew: initialData.crew || []
+          crew: initialData.crew || [],
+          streamingLinks: initialData.streamingLinks || []
         });
         // Default to URL mode when editing
         setUploadMode('url');
@@ -86,7 +87,7 @@ const MovieForm = ({ initialData, isEditing, onClose, onSubmit }) => {
     
     // Append simple fields
     Object.keys(formData).forEach(key => {
-        if (key !== 'cast' && key !== 'crew' && key !== 'posterUrl') {
+        if (key !== 'cast' && key !== 'crew' && key !== 'posterUrl' && key !== 'streamingLinks') {
             submitData.append(key, formData[key] === null ? '' : formData[key]);
         }
     });
@@ -102,6 +103,10 @@ const MovieForm = ({ initialData, isEditing, onClose, onSubmit }) => {
     // Send as JSON strings, backend will parse them
     submitData.append('cast', JSON.stringify(formData.cast));
     submitData.append('crew', JSON.stringify(formData.crew));
+    
+    if (formData.status === 'ENDED') {
+        submitData.append('streamingLinks', JSON.stringify(formData.streamingLinks || []));
+    }
 
     onSubmit(submitData);
   };
@@ -281,6 +286,63 @@ const MovieForm = ({ initialData, isEditing, onClose, onSubmit }) => {
                   <label className="text-xs font-bold text-gray-500 uppercase">Description</label>
                   <textarea name="description" value={formData.description} onChange={handleChange} className="w-full p-3 bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 dark:text-white" rows="3"></textarea>
                 </div>
+                
+                {formData.status === 'ENDED' && (
+                  <div className="md:col-span-2 space-y-4 bg-gray-100 dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-600 mt-2">
+                    <div className="flex justify-between items-center">
+                      <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Streaming Links</label>
+                      <button 
+                        type="button" 
+                        onClick={() => setFormData(prev => ({...prev, streamingLinks: [...(prev.streamingLinks || []), { platform: '', url: '' }]}))}
+                        className="text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 px-3 py-1.5 rounded font-bold transition flex items-center gap-1"
+                      >
+                        <FaPlus size={10} /> Add Link
+                      </button>
+                    </div>
+                    
+                    {(formData.streamingLinks || []).map((link, idx) => (
+                      <div key={`stream-${idx}`} className="flex gap-3 items-start bg-white dark:bg-gray-700 p-2 rounded shadow-sm border border-gray-200 dark:border-gray-600">
+                         <div className="flex-1 space-y-2">
+                             <input
+                               placeholder="Platform (e.g. Netflix)"
+                               className="w-full p-2.5 bg-gray-50 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600 dark:text-white text-sm"
+                               value={link.platform}
+                               onChange={(e) => {
+                                 const newLinks = [...formData.streamingLinks];
+                                 newLinks[idx].platform = e.target.value;
+                                 setFormData(prev => ({...prev, streamingLinks: newLinks}));
+                               }}
+                               required
+                             />
+                             <input
+                               placeholder="URL (e.g. https://netflix.com/...)"
+                               className="w-full p-2.5 bg-gray-50 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600 dark:text-white text-sm"
+                               value={link.url}
+                               onChange={(e) => {
+                                 const newLinks = [...formData.streamingLinks];
+                                 newLinks[idx].url = e.target.value;
+                                 setFormData(prev => ({...prev, streamingLinks: newLinks}));
+                               }}
+                               required
+                             />
+                         </div>
+                         <button
+                           type="button"
+                           onClick={() => {
+                             const newLinks = formData.streamingLinks.filter((_, i) => i !== idx);
+                             setFormData(prev => ({...prev, streamingLinks: newLinks}));
+                           }}
+                           className="p-3 text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 rounded transition h-full"
+                         >
+                           <FaTrash size={14} />
+                         </button>
+                      </div>
+                    ))}
+                    {!(formData.streamingLinks?.length > 0) && (
+                        <p className="text-xs text-gray-500 italic text-center py-2">No streaming links added. Click 'Add Link' to include streaming platforms.</p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 

@@ -32,9 +32,24 @@ const MovieCard = ({ movie }) => {
             >
               Book Tickets
             </Link>
+          ) : movie.status === 'ENDED' ? (
+             <div className="flex flex-col gap-2">
+                <Link 
+                  to={`/movie/${movie._id}#reviews`} 
+                  className="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded transition"
+                >
+                  Rate Now
+                </Link>
+                <Link 
+                  to={`/movie/${movie._id}`} 
+                  className="block w-full text-center bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded transition"
+                >
+                  Watch Online
+                </Link>
+             </div>
           ) : (
             <button disabled className="w-full bg-gray-600 text-gray-400 font-semibold py-2 rounded cursor-not-allowed">
-              {movie.status === 'UPCOMING' ? 'Coming Soon' : 'Ended'}
+              {movie.status === 'UPCOMING' ? 'Coming Soon' : movie.status}
             </button>
           )}
         </div>

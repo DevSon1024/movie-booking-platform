@@ -52,6 +52,10 @@ const movieSchema = new mongoose.Schema(
     // New Fields for Cast and Crew
     cast: [castCrewSchema],
     crew: [castCrewSchema],
+    streamingLinks: [{
+      platform: { type: String, required: true },
+      url: { type: String, required: true }
+    }],
     
     status: {
       type: String,

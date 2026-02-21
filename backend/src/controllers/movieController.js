@@ -145,7 +145,7 @@ const getMovieById = async (req, res) => {
 // @access  Private/Admin
 const createMovie = async (req, res) => {
   try {
-    const { title, description, genre, duration, language, releaseDate, posterUrl, trailerUrl, status, cast, crew } = req.body;
+    const { title, description, genre, duration, language, releaseDate, posterUrl, trailerUrl, status, cast, crew, streamingLinks } = req.body;
     const posterFile = req.file;
 
     // Use uploaded file or URL
@@ -173,7 +173,8 @@ const createMovie = async (req, res) => {
       trailerUrl,
       status,
       cast: cast ? parseJSON(cast) : [],
-      crew: crew ? parseJSON(crew) : []
+      crew: crew ? parseJSON(crew) : [],
+      streamingLinks: status === 'ENDED' && streamingLinks ? parseJSON(streamingLinks) : []
     });
 
     // Note: If cast/crew are sent as JSON strings in FormData, we might need to parse them.
@@ -197,7 +198,7 @@ const createMovie = async (req, res) => {
 // @access  Private/Admin
 const updateMovie = async (req, res) => {
   try {
-    const { title, description, genre, duration, language, releaseDate, posterUrl, trailerUrl, status, cast, crew } = req.body;
+    const { title, description, genre, duration, language, releaseDate, posterUrl, trailerUrl, status, cast, crew, streamingLinks } = req.body;
     const posterFile = req.file;
     
     const movie = await Movie.findById(req.params.id);
@@ -241,6 +242,12 @@ const updateMovie = async (req, res) => {
       
       if (cast) movie.cast = parseJSON(cast);
       if (crew) movie.crew = parseJSON(crew);
+      
+      if (status === 'ENDED' && streamingLinks) {
+        movie.streamingLinks = parseJSON(streamingLinks);
+      } else if (status !== 'ENDED') {
+        movie.streamingLinks = [];
+      }
 
       const updatedMovie = await movie.save();
       res.json(updatedMovie);

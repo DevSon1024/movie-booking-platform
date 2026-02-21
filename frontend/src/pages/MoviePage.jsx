@@ -16,7 +16,8 @@ import {
   FaTicketAlt,
   FaTimes,
   FaSearch,
-  FaUser, 
+  FaUser,
+  FaPlay 
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import useDocumentTitle from '../hooks/useDocumentTitle';
@@ -32,6 +33,7 @@ const MoviePage = () => {
   const [ratingStats, setRatingStats] = useState({ average: 0, count: 0 });
   
   const [showBookingModal, setShowBookingModal] = useState(false);
+  const [showStreamingDropdown, setShowStreamingDropdown] = useState(false);
   const [searchCity, setSearchCity] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
@@ -39,6 +41,7 @@ const MoviePage = () => {
   const [citySuggestions, setCitySuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchRef = useRef(null);
+  const streamingRef = useRef(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -47,6 +50,9 @@ const MoviePage = () => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setShowSuggestions(false);
+      }
+      if (streamingRef.current && !streamingRef.current.contains(event.target)) {
+        setShowStreamingDropdown(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -273,13 +279,70 @@ const MoviePage = () => {
                 </div>
               </div>
 
-              <button 
-                onClick={() => setShowBookingModal(true)}
-                className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-full font-bold text-sm md:text-base shadow-lg hover:shadow-red-600/30 hover:scale-105 transition-all flex items-center gap-2 mx-auto md:mx-0"
-              >
-                <FaTicketAlt />
-                Book Tickets
-              </button>
+              {movie.status === 'RUNNING' && (
+                <button 
+                  onClick={() => setShowBookingModal(true)}
+                  className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-full font-bold text-sm md:text-base shadow-lg hover:shadow-red-600/30 hover:scale-105 transition-all flex items-center gap-2 mx-auto md:mx-0"
+                >
+                  <FaTicketAlt />
+                  Book Tickets
+                </button>
+              )}
+              {movie.status === 'ENDED' && (
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mx-auto md:mx-0">
+                  <button 
+                    onClick={() => {
+                        const reviewsSec = document.getElementById('reviews');
+                        if(reviewsSec) reviewsSec.scrollIntoView({ behavior: 'smooth' });
+                        else window.location.hash = '#reviews';
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-bold text-sm md:text-base shadow-lg hover:shadow-blue-600/30 hover:scale-105 transition-all flex items-center gap-2"
+                  >
+                    <FaStar /> Rate Now
+                  </button>
+
+                  <div className="relative" ref={streamingRef}>
+                      <button 
+                        onClick={() => {
+                           if (movie.streamingLinks?.length > 0) {
+                               setShowStreamingDropdown(!showStreamingDropdown);
+                           }
+                        }}
+                        disabled={!movie.streamingLinks || movie.streamingLinks.length === 0}
+                        title={(!movie.streamingLinks || movie.streamingLinks.length === 0) ? "No streaming links available" : ""}
+                        className={`${(!movie.streamingLinks || movie.streamingLinks.length === 0) ? "bg-gray-600 cursor-not-allowed text-gray-300" : "bg-green-600 hover:bg-green-700 hover:shadow-green-600/30 hover:scale-105"} text-white px-8 py-3 rounded-full font-bold text-sm md:text-base shadow-lg transition-all flex items-center gap-2`}
+                      >
+                        <FaPlay /> Watch Online
+                      </button>
+
+                      {showStreamingDropdown && movie.streamingLinks && movie.streamingLinks.length > 0 && (
+                          <div className="absolute left-1/2 transform -translate-x-1/2 md:left-0 md:translate-x-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden z-50">
+                             <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700 border-b border-gray-100 dark:border-gray-600">
+                                 <h4 className="text-xs font-bold text-gray-500 dark:text-gray-300 uppercase">Available On</h4>
+                             </div>
+                             {movie.streamingLinks.map((link, i) => {
+                               const validUrl = /^https?:\/\//i.test(link.url) ? link.url : `https://${link.url}`;
+                               return (
+                               <a 
+                                 key={i} 
+                                 href={validUrl} 
+                                 target="_blank" 
+                                 rel="noopener noreferrer"
+                                 className="flex items-center px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:text-green-600 dark:hover:text-green-400 transition"
+                                 onClick={(e) => {
+                                   setShowStreamingDropdown(false);
+                                   e.stopPropagation();
+                                 }}
+                               >
+                                  <FaPlay className="mr-3 text-xs opacity-50" />
+                                  {link.platform}
+                               </a>
+                             )})}
+                          </div>
+                      )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -329,7 +392,7 @@ const MoviePage = () => {
                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
                    {movie.cast.map((person, idx) => (
                      <div key={`cast-${idx}`} className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm hover:shadow-md border border-gray-100 dark:border-gray-800 transition-all group">
-                       <div className="h-36 sm:h-44 overflow-hidden">
+                       <div className="h-36 sm:h-44 overflow-hidden bg-gray-100 dark:bg-gray-700">
                          <CachedImage 
                            src={person.image} 
                            alt={person.name} 
@@ -346,6 +409,35 @@ const MoviePage = () => {
                  </div>
               ) : (
                 <p className="text-base text-gray-500">Cast info updating...</p>
+              )}
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                 <FaUser className="text-red-500" /> Crew
+              </h2>
+              
+              {movie.crew && movie.crew.length > 0 ? (
+                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+                   {movie.crew.map((person, idx) => (
+                     <div key={`crew-${idx}`} className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm hover:shadow-md border border-gray-100 dark:border-gray-800 transition-all group">
+                       <div className="h-36 sm:h-44 overflow-hidden bg-gray-100 dark:bg-gray-700">
+                         <CachedImage 
+                           src={person.image} 
+                           alt={person.name} 
+                           className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                           fallbackSrc="/placeholder-movie.svg"
+                         />
+                       </div>
+                       <div className="p-3 text-center">
+                         <p className="font-bold text-gray-900 dark:text-white text-sm line-clamp-1">{person.name}</p>
+                         <p className="text-xs text-blue-500 dark:text-blue-400 mt-1 line-clamp-1">{person.role}</p>
+                       </div>
+                     </div>
+                   ))}
+                 </div>
+              ) : (
+                <p className="text-base text-gray-500">Crew info updating...</p>
               )}
             </section>
           </div>
@@ -391,7 +483,7 @@ const MoviePage = () => {
 
         </div>
 
-        <div className="mt-16">
+        <div className="mt-16" id="reviews">
           <Reviews movieId={id} movieStatus={movie.status} />
         </div>
 
