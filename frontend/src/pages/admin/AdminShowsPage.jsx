@@ -3,8 +3,9 @@ import { FaPlus, FaCalendarAlt, FaSearch, FaFilter, FaList, FaTh } from "react-i
 import { getAdminMovies } from "../../services/movieService";
 import { useSelector } from "react-redux";
 import { getTheatres } from "../../services/theatreService";
-import { createShow, getShows, updateShow, deleteShow } from "../../services/showService";
+import { createShow, getShows, updateShow, deleteShow, getShowBookings } from "../../services/showService";
 import toast from "react-hot-toast";
+import { FaEye, FaTimes } from "react-icons/fa";
 import ShowForm from "../../components/admin/ShowForm";
 import MovieSearchDropdown from "../../components/admin/MovieSearchDropdown";
 import CitySearchDropdown from "../../components/admin/CitySearchDropdown";
@@ -16,6 +17,12 @@ const AdminShowsPage = () => {
   const [theatres, setTheatres] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingShow, setEditingShow] = useState(null);
+  
+  // View Bookings State
+  const [viewingShow, setViewingShow] = useState(null);
+  const [showBookings, setShowBookings] = useState([]);
+  const [isBookingsLoading, setIsBookingsLoading] = useState(false);
+  
   const { currencySymbol } = useSelector((state) => state.settings);
 
   // View and Sorting State
@@ -98,6 +105,30 @@ const AdminShowsPage = () => {
        setShows(formattedShows); 
        toast.success('Deleted'); 
     }
+  };
+
+  const handleViewBookings = async (show) => {
+    setViewingShow(show);
+    setIsBookingsLoading(true);
+    try {
+      const bookings = await getShowBookings(show._id);
+      setShowBookings(bookings);
+    } catch (e) {
+      toast.error('Failed to load bookings');
+    } finally {
+      setIsBookingsLoading(false);
+    }
+  };
+
+  const calculateShowStatus = (show) => {
+    const totalSeats = show.seats?.length || 0;
+    const bookedSeats = show.seats?.filter(s => s.isBooked).length || 0;
+    if (totalSeats === 0) return { label: 'N/A', classes: 'text-gray-500 bg-gray-100' };
+
+    const percentage = (bookedSeats / totalSeats) * 100;
+    if (percentage === 100) return { label: 'Housefull', classes: 'text-red-700 bg-red-100 dark:bg-red-900/30 dark:text-red-400' };
+    if (percentage >= 80) return { label: 'Fast Filling', classes: 'text-yellow-700 bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-400' };
+    return { label: 'Available', classes: 'text-green-700 bg-green-100 dark:bg-green-900/30 dark:text-green-400' };
   };
 
   const filteredShows = useMemo(() => {
@@ -270,6 +301,7 @@ const AdminShowsPage = () => {
               <th className="p-4">Movie</th>
               <th className="p-4">Theatre</th>
               <th className="p-4">Date & Time</th>
+              <th className="p-4 text-center">Status</th>
               <th className="p-4">Price</th>
               <th className="p-4 text-right">Actions</th>
             </tr>
@@ -295,8 +327,14 @@ const AdminShowsPage = () => {
                             })}
                         </div>
                     </td>
+                    <td className="p-4 text-center">
+                       <span className={`px-2 py-1 rounded text-xs font-bold ${calculateShowStatus(show).classes}`}>
+                         {calculateShowStatus(show).label}
+                       </span>
+                    </td>
                     <td className="p-4 font-bold text-green-600">{currencySymbol}{show.price}</td>
                     <td className="p-4 text-right space-x-3">
+                      <button onClick={() => handleViewBookings(show)} className="text-teal-500 hover:text-teal-700 font-semibold text-sm transition transition-transform hover:scale-110"><FaEye className="inline mr-1"/>View</button>
                       <button onClick={() => { setEditingShow(show); setIsModalOpen(true); }} className="text-blue-500 hover:text-blue-700 font-semibold text-sm transition transition-transform hover:scale-110">Edit</button>
                       <button onClick={() => handleDelete(show._id)} className="text-red-500 hover:text-red-700 font-semibold text-sm transition transition-transform hover:scale-110">Delete</button>
                     </td>
@@ -331,7 +369,13 @@ const AdminShowsPage = () => {
                  </div>
                  
                  <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg mb-4 text-sm mt-auto">
-                   <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300 mb-1.5">
+                   <div className="flex items-center justify-between mb-1.5 gap-2 border-b border-gray-200 dark:border-gray-700 pb-2">
+                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${calculateShowStatus(show).classes}`}>
+                        {calculateShowStatus(show).label}
+                     </span>
+                     <div className="font-bold text-green-600 text-base">{currencySymbol}{show.price}</div>
+                   </div>
+                   <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300 mb-1.5 mt-2">
                        <FaCalendarAlt className="text-red-500/70 shrink-0" />
                        <span className="truncate">
                            {new Date(show.startTime).toLocaleString(undefined, {
@@ -340,14 +384,16 @@ const AdminShowsPage = () => {
                            })}
                        </span>
                    </div>
-                   <div className="font-bold text-green-600 mt-2 text-lg">{currencySymbol}{show.price}</div>
                  </div>
                  
-                 <div className="flex gap-2 border-t border-gray-100 dark:border-gray-700 pt-3">
-                    <button onClick={() => { setEditingShow(show); setIsModalOpen(true); }} className="flex-1 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 dark:text-blue-400 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 py-2 rounded font-semibold text-sm transition">
+                 <div className="flex gap-2 border-t border-gray-100 dark:border-gray-700 pt-3 flex-wrap">
+                    <button onClick={() => handleViewBookings(show)} className="flex-1 text-teal-600 hover:text-teal-800 bg-teal-50 hover:bg-teal-100 dark:text-teal-400 dark:bg-teal-900/20 dark:hover:bg-teal-900/40 py-2 rounded font-semibold text-xs sm:text-sm transition flex items-center justify-center gap-1">
+                       <FaEye /> View
+                    </button>
+                    <button onClick={() => { setEditingShow(show); setIsModalOpen(true); }} className="flex-1 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 dark:text-blue-400 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 py-2 rounded font-semibold text-xs sm:text-sm transition">
                        Edit
                     </button>
-                    <button onClick={() => handleDelete(show._id)} className="flex-1 text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 dark:text-red-400 dark:bg-red-900/20 dark:hover:bg-red-900/40 py-2 rounded font-semibold text-sm transition">
+                    <button onClick={() => handleDelete(show._id)} className="flex-1 text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 dark:text-red-400 dark:bg-red-900/20 dark:hover:bg-red-900/40 py-2 rounded font-semibold text-xs sm:text-sm transition">
                        Delete
                     </button>
                  </div>
@@ -372,6 +418,82 @@ const AdminShowsPage = () => {
           onClose={() => setIsModalOpen(false)}
           onSubmit={handleSave}
         />
+      )}
+
+      {/* View Bookings Modal */}
+      {viewingShow && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+             
+             {/* Header */}
+             <div className="border-b border-gray-200 dark:border-gray-700 p-6 flex justify-between items-center bg-gray-50 dark:bg-gray-900">
+               <div>
+                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Show Bookings</h2>
+                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                   {viewingShow.movie?.title} • {viewingShow.theatre?.name} ({viewingShow.screenName})
+                 </p>
+                 <div className="flex items-center gap-3 mt-1.5">
+                   <span className={`px-2 py-0.5 rounded text-xs font-semibold ${calculateShowStatus(viewingShow).classes}`}>
+                     {calculateShowStatus(viewingShow).label}
+                   </span>
+                   <span className="text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-200/50 dark:bg-gray-800/50 px-2 py-0.5 rounded">
+                     {viewingShow.seats?.filter(s => s.isBooked).length || 0} / {viewingShow.seats?.length || 0} Seats Booked
+                   </span>
+                 </div>
+               </div>
+               <button onClick={() => setViewingShow(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                  <FaTimes size={20} />
+               </button>
+             </div>
+
+             {/* Content */}
+             <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+               {isBookingsLoading ? (
+                 <div className="flex justify-center items-center h-48">
+                   <div className="w-10 h-10 border-4 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+                 </div>
+               ) : showBookings.length > 0 ? (
+                 <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                   <table className="w-full text-left whitespace-nowrap">
+                     <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs uppercase font-semibold">
+                       <tr>
+                         <th className="p-4">Booking ID</th>
+                         <th className="p-4">User</th>
+                         <th className="p-4">Seats</th>
+                         <th className="p-4">Total Price</th>
+                         <th className="p-4">Date Booked</th>
+                       </tr>
+                     </thead>
+                     <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                       {showBookings.map((booking) => (
+                         <tr key={booking._id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                           <td className="p-4 text-xs font-mono text-gray-500 dark:text-gray-400">{booking._id.substring(0, 8)}...</td>
+                           <td className="p-4">
+                             <div className="font-semibold text-gray-800 dark:text-white">{booking.user?.name}</div>
+                             <div className="text-xs text-gray-500">{booking.user?.email}</div>
+                           </td>
+                           <td className="p-4 font-medium text-gray-700 dark:text-gray-300">
+                             {booking.seats.join(', ')} <span className="text-xs text-gray-400">({booking.seats.length})</span>
+                           </td>
+                           <td className="p-4 font-bold text-green-600">{currencySymbol}{booking.totalPrice}</td>
+                           <td className="p-4 text-sm text-gray-600 dark:text-gray-400">
+                             {new Date(booking.createdAt).toLocaleString()}
+                           </td>
+                         </tr>
+                       ))}
+                     </tbody>
+                   </table>
+                 </div>
+               ) : (
+                 <div className="text-center py-12">
+                   <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200">No bookings yet</h3>
+                   <p className="text-gray-500 dark:text-gray-400 mt-2">There are currently no seats booked for this show.</p>
+                 </div>
+               )}
+             </div>
+
+          </div>
+        </div>
       )}
     </div>
   );

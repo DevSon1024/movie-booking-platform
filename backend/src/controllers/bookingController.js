@@ -112,4 +112,20 @@ const getMyBookings = async (req, res) => {
   res.json(bookings);
 };
 
-export { createBooking, getMyBookings };
+// @desc    Get bookings for a specific show (Admin)
+// @route   GET /api/bookings/show/:showId
+// @access  Private/Admin
+const getBookingsByShow = async (req, res) => {
+  try {
+    const bookings = await Booking.find({ show: req.params.showId })
+      .populate('user', 'name email')
+      .populate('movie', 'title')
+      .sort({ createdAt: -1 });
+    res.json(bookings);
+  } catch (error) {
+    res.status(500);
+    throw new Error('Failed to fetch bookings for this show');
+  }
+};
+
+export { createBooking, getMyBookings, getBookingsByShow };

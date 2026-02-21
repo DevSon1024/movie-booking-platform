@@ -25,3 +25,9 @@ export const deleteShow = async (id) => {
   const response = await api.delete(`/shows/${id}`);
   return response.data;
 };
+
+// Admin Bookings Service
+export const getShowBookings = async (showId) => {
+  const response = await api.get(`/bookings/show/${showId}`);
+  return response.data;
+};

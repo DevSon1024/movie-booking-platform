@@ -207,13 +207,13 @@ const HomePage = () => {
            {/* Carousel Controls */}
            <button 
               onClick={() => setCurrentHeroSlide((prev) => (prev - 1 + trendingMovies.length) % trendingMovies.length)}
-              className="absolute left-4 md:left-8 top-1/2 transform -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white rounded-full p-3 md:p-4 backdrop-blur-md transition-all opacity-0 group-hover:opacity-100 hidden sm:block z-30"
+              className="absolute left-4 md:left-8 top-1/2 transform -translate-y-1/2 bg-transparent hover:bg-white/10 text-white rounded-full p-3 md:p-4 backdrop-blur-md transition-all opacity-0 group-hover:opacity-100 hidden sm:block z-30"
            >
               <FaChevronLeft size={24} />
            </button>
            <button 
               onClick={() => setCurrentHeroSlide((prev) => (prev + 1) % trendingMovies.length)}
-              className="absolute right-4 md:right-8 top-1/2 transform -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white rounded-full p-3 md:p-4 backdrop-blur-md transition-all opacity-0 group-hover:opacity-100 hidden sm:block z-30"
+              className="absolute right-4 md:right-8 top-1/2 transform -translate-y-1/2 bg-transparent hover:bg-white/10 text-white rounded-full p-3 md:p-4 backdrop-blur-md transition-all opacity-0 group-hover:opacity-100 hidden sm:block z-30"
            >
               <FaChevronRight size={24} />
            </button>
@@ -258,12 +258,12 @@ const HomePage = () => {
                   {trendingMovies.map((movie, index) => (
                       <div 
                         key={`poster-${movie._id}`}
-                        className={`absolute w-[320px] lg:w-[350px] aspect-[2/3] perspective-1000 transition-all duration-1000 ease-out ${currentHeroSlide === index ? 'opacity-100 translate-x-0 scale-100 rotate-0 z-20' : 'opacity-0 translate-x-12 scale-95 rotate-6 z-0 pointer-events-none'}`}
+                        className={`absolute flex justify-center items-center h-[480px] lg:h-[525px] group perspective-1000 transition-all duration-1000 ease-out ${currentHeroSlide === index ? 'opacity-100 translate-x-0 scale-100 rotate-0 z-20' : 'opacity-0 translate-x-12 scale-95 rotate-6 z-0 pointer-events-none'}`}
                       >
                           <CachedImage 
                             src={movie.posterUrl} 
                             alt={movie.title} 
-                            className="w-full h-full object-contain rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.7)] border-4 border-transparent group-hover:border-white/10 transition-all duration-500 bg-transparent"
+                            className="h-full w-auto max-w-[320px] lg:max-w-[350px] object-cover rounded-2xl border-4 border-transparent group-hover:border-white/30 transition-all duration-500 shadow-[0_30px_60px_rgba(0,0,0,0.7)] hover:shadow-[0_40px_80px_rgba(0,0,0,0.9)] bg-gray-900"
                             fallbackSrc="/placeholder-movie.svg"
                             lazy={false}
                           />

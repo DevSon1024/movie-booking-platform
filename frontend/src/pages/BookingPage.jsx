@@ -232,6 +232,23 @@ const BookingPage = () => {
       }, {})
     : {};
 
+  const totalSeats = show.seats ? show.seats.length : 0;
+  const bookedSeatsCount = show.seats ? show.seats.filter(s => s.isBooked).length : 0;
+  
+  let showStatusLabel = "Available";
+  let showStatusColor = "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800";
+  
+  if (totalSeats > 0) {
+    const bookedPercentage = (bookedSeatsCount / totalSeats) * 100;
+    if (bookedPercentage === 100) {
+      showStatusLabel = "Housefull";
+      showStatusColor = "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800";
+    } else if (bookedPercentage >= 80) {
+      showStatusLabel = "Fast Filling";
+      showStatusColor = "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800";
+    }
+  }
+
   const totalPrice = selectedSeats.length * (show.price || 0);
 
   return (
@@ -271,11 +288,16 @@ const BookingPage = () => {
                 </span>
               </div>
             </div>
-            <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 px-6 py-3 rounded-lg border border-green-200 dark:border-green-800">
-              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Price per seat</p>
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {currencySymbol}{show.price}
-              </p>
+            <div className="flex flex-col md:flex-row items-center gap-4">
+              <div className={`px-4 py-1.5 rounded-full border text-sm font-bold shadow-sm ${showStatusColor}`}>
+                {showStatusLabel}
+              </div>
+              <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 px-6 py-3 rounded-lg border border-green-200 dark:border-green-800">
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Price per seat</p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {currencySymbol}{show.price}
+                </p>
+              </div>
             </div>
           </div>
         </div>
