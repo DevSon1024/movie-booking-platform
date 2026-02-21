@@ -5,7 +5,7 @@ import Show from '../models/Show.js';
 // @route   POST /api/bookings
 // @access  Private
 const createBooking = async (req, res) => {
-  const { showId, selectedSeats } = req.body; 
+  const { showId, selectedSeats, transactionId, paymentMethod } = req.body; 
 
   // 1. Find the Show with populated movie and theatre
   const show = await Show.findById(showId)
@@ -54,6 +54,8 @@ const createBooking = async (req, res) => {
       movie: show.movie._id, // Store just the ID
       seats: selectedSeats,
       totalPrice: totalPrice,
+      transactionId: transactionId || `TXN-DUMMY-${Math.floor(Math.random() * 1000000)}`,
+      paymentMethod: paymentMethod || 'CARD'
     });
 
     const createdBooking = await booking.save();

@@ -17,7 +17,9 @@ import {
   FaClock,
   FaMapMarkerAlt,
   FaTheaterMasks,
-  FaHome
+  FaHome,
+  FaMobileAlt,
+  FaQrcode
 } from "react-icons/fa";
 
 const BookingPage = () => {
@@ -32,6 +34,11 @@ const BookingPage = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [bookingData, setBookingData] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Payment State
+  const [paymentMethod, setPaymentMethod] = useState("UPI");
+  const [upiId, setUpiId] = useState("");
+  const [upiWaiting, setUpiWaiting] = useState(false);
 
   useEffect(() => {
     const fetchShow = async () => {
@@ -72,29 +79,83 @@ const BookingPage = () => {
       return;
     }
     setShowPaymentModal(true);
+    setPaymentMethod("UPI");
+    setUpiWaiting(false);
   };
 
-  const processPaymentAndBook = async () => {
-    setProcessing(true);
+  const processPaymentAndBook = async (e) => {
+    if (e) e.preventDefault();
+    if (processing) return;
     
-    // Simulate payment processing
+    if (paymentMethod === "UPI" && !upiId.includes("@")) {
+      toast.error("Please enter a valid UPI ID (e.g., user@upi)");
+      return;
+    }
+
+    setProcessing(true);
+
+    if (paymentMethod === "UPI") {
+      setUpiWaiting(true);
+    }
+    
+    // Simulate payment processing wait time
+    const waitTime = paymentMethod === "UPI" ? 3000 : 2000;
+
     setTimeout(async () => {
       try {
+        const dummyTxnId = `TXN-${Math.floor(100000000 + Math.random() * 900000000)}`;
+
         const { data } = await api.post("/bookings", { 
           showId: id, 
-          selectedSeats 
+          selectedSeats,
+          paymentMethod,
+          transactionId: dummyTxnId
         });
         
         setBookingData(data);
         setShowPaymentModal(false);
+        setUpiWaiting(false);
         setShowSuccessModal(true);
         toast.success("🎉 Booking Confirmed!");
         
       } catch (error) {
         toast.error(error.response?.data?.message || "Booking failed. Please try again.");
+        setUpiWaiting(false);
+      } finally {
         setProcessing(false);
       }
-    }, 2000);
+    }, waitTime);
+  };
+
+  const simulateQRScan = () => {
+      if (processing) return;
+      setProcessing(true);
+      setUpiWaiting(true);
+      
+      setTimeout(async () => {
+        try {
+          const dummyTxnId = `TXN-QR-${Math.floor(100000000 + Math.random() * 900000000)}`;
+  
+          const { data } = await api.post("/bookings", { 
+            showId: id, 
+            selectedSeats,
+            paymentMethod: "UPI",
+            transactionId: dummyTxnId
+          });
+          
+          setBookingData(data);
+          setShowPaymentModal(false);
+          setUpiWaiting(false);
+          setShowSuccessModal(true);
+          toast.success("🎉 QR Payment Confirmed!");
+          
+        } catch (error) {
+          toast.error(error.response?.data?.message || "Booking failed. Please try again.");
+          setUpiWaiting(false);
+        } finally {
+          setProcessing(false);
+        }
+      }, 2000);
   };
 
   const handleCloseSuccess = () => {
@@ -326,111 +387,215 @@ const BookingPage = () => {
 
         {/* Payment Modal */}
         {showPaymentModal && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-2xl max-w-md w-full border border-gray-200 dark:border-gray-700 shadow-2xl max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                  <FaCreditCard className="text-blue-500" /> Payment
-                </h3>
-                {!processing && (
-                  <button
-                    onClick={() => setShowPaymentModal(false)}
-                    className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-4xl border border-gray-200 dark:border-gray-700 shadow-2xl flex flex-col md:flex-row overflow-hidden max-h-[90vh]">
+              
+              {/* Left Sidebar - Payment Methods */}
+              <div className="md:w-1/3 bg-gray-50 dark:bg-gray-900 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 p-6 flex flex-col relative">
+                 <button
+                    onClick={() => !processing && setShowPaymentModal(false)}
+                    disabled={processing}
+                    className="md:hidden absolute top-4 right-4 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white p-2"
                   >
                     <FaTimes className="text-xl" />
-                  </button>
-                )}
+                 </button>
+
+                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Payment Methods</h3>
+                 
+                 <div className="space-y-3 flex-1">
+                    <button 
+                      onClick={() => !processing && setPaymentMethod("UPI")}
+                      disabled={processing}
+                      className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${paymentMethod === 'UPI' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : 'border-transparent bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                    >
+                       <FaMobileAlt className="text-xl" />
+                       <span className="font-semibold">UPI / QR Scan</span>
+                    </button>
+                    <button 
+                      onClick={() => !processing && setPaymentMethod("CARD")}
+                      disabled={processing}
+                      className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${paymentMethod === 'CARD' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : 'border-transparent bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                    >
+                       <FaCreditCard className="text-xl" />
+                       <span className="font-semibold">Credit/Debit Card</span>
+                    </button>
+                 </div>
+
+                 <div className="mt-8">
+                    <div className="bg-gray-200 dark:bg-gray-800 rounded-lg p-4">
+                       <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider mb-1">Total to Pay</p>
+                       <p className="text-2xl font-bold text-gray-900 dark:text-white">{currencySymbol}{totalPrice}</p>
+                    </div>
+                 </div>
               </div>
 
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-5 rounded-xl mb-6 border border-blue-200 dark:border-blue-800">
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-gray-600 dark:text-gray-400 text-sm">Movie:</span>
-                  <span className="text-gray-900 dark:text-white font-bold truncate ml-2">
-                    {show.movie?.title}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-gray-600 dark:text-gray-400 text-sm">Seats:</span>
-                  <span className="text-gray-900 dark:text-white font-medium text-right ml-2">
-                    {selectedSeats.join(", ")}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-lg pt-3 border-t border-blue-200 dark:border-blue-800">
-                  <span className="text-gray-700 dark:text-gray-300 font-medium">Total Amount:</span>
-                  <span className="font-bold text-green-600 dark:text-green-400 text-xl">
-                    {currencySymbol}{totalPrice}
-                  </span>
-                </div>
+              {/* Right Pane - Details */}
+              <div className="md:w-2/3 p-6 md:p-8 flex flex-col relative overflow-y-auto custom-scrollbar">
+                 <button
+                    onClick={() => !processing && setShowPaymentModal(false)}
+                    disabled={processing}
+                    className="hidden md:block absolute top-6 right-6 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                  >
+                    <FaTimes className="text-xl" />
+                 </button>
+
+                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+                    {paymentMethod === 'UPI' ? 'Pay via UPI' : 'Pay via Card'}
+                 </h3>
+
+                 {/* Order Summary Snapshot */}
+                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 p-4 rounded-xl mb-8 border border-blue-100 dark:border-blue-800/50 flex justify-between items-center">
+                    <div>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate max-w-[200px]">{show.movie?.title}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{selectedSeats.length} Seats: {selectedSeats.join(", ")}</p>
+                    </div>
+                    <div className="text-right">
+                        <p className="font-bold text-blue-700 dark:text-blue-400 text-lg">{currencySymbol}{totalPrice}</p>
+                    </div>
+                 </div>
+
+                 {/* Payment Forms */}
+                 <div className="flex-1">
+                    {paymentMethod === "UPI" ? (
+                      <div className="flex flex-col md:flex-row gap-8 items-center md:items-start justify-center">
+                          {/* UPI ID Form */}
+                          <div className="flex-1 w-full text-center md:text-left">
+                            <form onSubmit={processPaymentAndBook} className="space-y-4 max-w-sm mx-auto md:mx-0">
+                              <label className="text-sm text-gray-700 dark:text-gray-300 font-medium block">
+                                Enter your UPI ID
+                              </label>
+                              <input
+                                type="text"
+                                placeholder="username@upi"
+                                value={upiId}
+                                onChange={(e) => setUpiId(e.target.value)}
+                                disabled={processing}
+                                className="w-full bg-gray-50 dark:bg-gray-700 p-4 rounded-xl text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none transition-all text-center md:text-left text-lg font-medium tracking-wide"
+                                required
+                              />
+                              <button
+                                type="submit"
+                                disabled={processing}
+                                className={`w-full py-4 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 ${
+                                  upiWaiting 
+                                    ? 'bg-blue-600 text-white animate-pulse' 
+                                    : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white hover:scale-[1.02]'
+                                } disabled:opacity-80 disabled:cursor-not-allowed`}
+                              >
+                                {upiWaiting ? (
+                                  <>
+                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    Awaiting approval on your UPI app...
+                                  </>
+                                ) : (
+                                  <>Pay {currencySymbol}{totalPrice}</>
+                                )}
+                              </button>
+                            </form>
+                          </div>
+                          
+                          {/* OR Divider */}
+                          <div className="hidden md:flex flex-col items-center">
+                             <div className="h-16 w-px bg-gray-300 dark:bg-gray-700"></div>
+                             <span className="text-xs font-bold text-gray-400 dark:text-gray-500 py-2 uppercase">OR</span>
+                             <div className="h-16 w-px bg-gray-300 dark:bg-gray-700"></div>
+                          </div>
+                          <div className="flex md:hidden items-center w-full max-w-sm my-2">
+                             <div className="flex-1 h-px bg-gray-300 dark:bg-gray-700"></div>
+                             <span className="text-xs font-bold text-gray-400 dark:text-gray-500 px-4 uppercase">OR</span>
+                             <div className="flex-1 h-px bg-gray-300 dark:bg-gray-700"></div>
+                          </div>
+
+                          {/* QR Simulation */}
+                          <div className="flex-1 flex flex-col items-center justify-center pointer-events-auto">
+                              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-4">Scan QR with any UPI app</p>
+                              <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-200">
+                                <QRCodeSVG 
+                                  value={`upi://pay?pa=dummy@upi&pn=CinePrime&am=${totalPrice}&cu=INR`} 
+                                  size={160}
+                                />
+                              </div>
+                              <button
+                                onClick={simulateQRScan}
+                                disabled={processing}
+                                className="mt-6 text-blue-600 dark:text-blue-400 font-semibold hover:underline flex items-center gap-2 disabled:opacity-50"
+                              >
+                                <FaQrcode /> Simulate QR Scan Success
+                              </button>
+                          </div>
+                      </div>
+                    ) : (
+                      <form onSubmit={processPaymentAndBook} className="space-y-5 max-w-md mx-auto md:ml-0">
+                        <div>
+                          <label className="text-sm text-gray-700 dark:text-gray-300 font-medium ml-1 block mb-2">
+                            Card Number
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="1234 5678 9012 3456"
+                            maxLength="19"
+                            disabled={processing}
+                            className="w-full bg-gray-50 dark:bg-gray-700 p-4 rounded-xl text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none transition-all tracking-widest font-mono"
+                            required
+                          />
+                        </div>
+                        <div className="flex gap-4">
+                          <div className="flex-1">
+                            <label className="text-sm text-gray-700 dark:text-gray-300 font-medium ml-1 block mb-2">
+                              Expiry Date
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="MM/YY"
+                              maxLength="5"
+                              disabled={processing}
+                              className="w-full bg-gray-50 dark:bg-gray-700 p-4 rounded-xl text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none transition-all text-center"
+                              required
+                            />
+                          </div>
+                          <div className="w-1/3">
+                            <label className="text-sm text-gray-700 dark:text-gray-300 font-medium ml-1 block mb-2">
+                              CVV
+                            </label>
+                            <input
+                              type="password"
+                              placeholder="***"
+                              maxLength="3"
+                              disabled={processing}
+                              className="w-full bg-gray-50 dark:bg-gray-700 p-4 rounded-xl text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none transition-all text-center"
+                              required
+                            />
+                          </div>
+                        </div>
+        
+                        <button
+                          type="submit"
+                          disabled={processing}
+                          className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 rounded-xl mt-6 shadow-lg transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-lg"
+                        >
+                          {processing ? (
+                            <>
+                              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              <FaCreditCard /> Pay {currencySymbol}{totalPrice}
+                            </>
+                          )}
+                        </button>
+                      </form>
+                    )}
+                 </div>
+
+                 <div className="mt-8 text-center border-t border-gray-200 dark:border-gray-700 pt-6">
+                   <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1.5">
+                     <span className="bg-green-100 text-green-700 p-1 rounded-full"><FaCheckCircle className="text-[10px]" /></span>
+                     Secure Checkout • 256-bit Encryption
+                   </p>
+                 </div>
               </div>
 
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  processPaymentAndBook();
-                }}
-                className="space-y-4"
-              >
-                <div>
-                  <label className="text-sm text-gray-700 dark:text-gray-300 font-medium ml-1 block mb-2">
-                    Card Number
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="1234 5678 9012 3456"
-                    maxLength="19"
-                    className="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded-lg text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 outline-none transition-all"
-                    required
-                  />
-                </div>
-                <div className="flex gap-4">
-                  <div className="flex-1">
-                    <label className="text-sm text-gray-700 dark:text-gray-300 font-medium ml-1 block mb-2">
-                      Expiry Date
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="MM/YY"
-                      maxLength="5"
-                      className="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded-lg text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 outline-none transition-all"
-                      required
-                    />
-                  </div>
-                  <div className="w-1/3">
-                    <label className="text-sm text-gray-700 dark:text-gray-300 font-medium ml-1 block mb-2">
-                      CVV
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="123"
-                      maxLength="3"
-                      className="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded-lg text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 outline-none transition-all"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={processing}
-                  className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 dark:from-green-500 dark:to-green-600 dark:hover:from-green-600 dark:hover:to-green-700 text-white font-bold py-4 rounded-xl mt-6 shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {processing ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <FaCheckCircle />
-                      Pay {currencySymbol}{totalPrice}
-                    </>
-                  )}
-                </button>
-              </form>
-
-              <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-4">
-                🔒 Your payment is secure and encrypted
-              </p>
             </div>
           </div>
         )}

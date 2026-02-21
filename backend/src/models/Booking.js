@@ -33,6 +33,15 @@ const bookingSchema = new mongoose.Schema({
     type: String,
     enum: ['PENDING', 'CONFIRMED', 'CANCELLED'],
     default: 'CONFIRMED', // Mocking successful payment for this project
+  },
+  transactionId: {
+    type: String, // e.g. "TXN-12345678"
+    required: false,
+  },
+  paymentMethod: {
+    type: String,
+    enum: ['UPI', 'CARD'],
+    required: false,
   }
 }, {
   timestamps: true,

@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { FaTimes, FaCalendarCheck } from "react-icons/fa";
+import MovieSearchDropdown from "./MovieSearchDropdown";
+import TheatreSearchDropdown from "./TheatreSearchDropdown";
 
 const ShowForm = ({ initialData, isEditing, movies, theatres, currencySymbol, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -30,6 +32,11 @@ const ShowForm = ({ initialData, isEditing, movies, theatres, currencySymbol, on
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
+  // Only allow scheduling for RUNNING movies, but keep the current movie if editing
+  const selectableMovies = movies.filter(
+    m => m.status === 'RUNNING' || (isEditing && m._id === formData.movieId)
+  );
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-lg shadow-2xl flex flex-col">
@@ -43,17 +50,27 @@ const ShowForm = ({ initialData, isEditing, movies, theatres, currencySymbol, on
         <form onSubmit={(e) => { e.preventDefault(); onSubmit(formData); }} className="p-6 space-y-4">
           <div>
             <label className="text-sm font-semibold dark:text-gray-300">Movie</label>
-            <select name="movieId" value={formData.movieId} onChange={handleChange} className="w-full p-2.5 mt-1 rounded border dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
-              <option value="">Select Movie</option>
-              {movies.map(m => <option key={m._id} value={m._id}>{m.title}</option>)}
-            </select>
+            <div className="mt-1">
+              <MovieSearchDropdown 
+                movies={selectableMovies}
+                value={formData.movieId}
+                onChange={(val) => setFormData({ ...formData, movieId: val })}
+                mode="id"
+                placeholder="Select a RUNNING movie..."
+              />
+            </div>
           </div>
           <div>
             <label className="text-sm font-semibold dark:text-gray-300">Theatre</label>
-            <select name="theatreId" value={formData.theatreId} onChange={handleChange} className="w-full p-2.5 mt-1 rounded border dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
-              <option value="">Select Theatre</option>
-              {theatres.map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
-            </select>
+            <div className="mt-1">
+              <TheatreSearchDropdown 
+                theatres={theatres}
+                value={formData.theatreId}
+                onChange={(val) => setFormData({ ...formData, theatreId: val })}
+                mode="id"
+                placeholder="Select a Theatre..."
+              />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
