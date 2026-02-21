@@ -3,6 +3,7 @@ import fsSync from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import sharp from 'sharp';
+import axios from 'axios';
 
 // Helper to get file path
 const __filename = fileURLToPath(import.meta.url);
@@ -35,12 +36,49 @@ const convertToWebP = async (inputPath, outputFilename) => {
   await ensureImageDirExists();
   const outputPath = path.join(IMAGE_DIR, outputFilename);
   
-  await sharp(inputPath)
-    .resize(800, 1200, { fit: 'cover', withoutEnlargement: true })
-    .webp({ quality: 85 })
-    .toFile(outputPath);
+  const isWebp = inputPath.toLowerCase().endsWith('.webp');
+  
+  let sharpInstance = sharp(inputPath)
+    .resize(800, 1200, { fit: 'cover', withoutEnlargement: true });
+    
+  if (!isWebp) {
+    sharpInstance = sharpInstance.webp({ quality: 85 });
+  }
+  
+  await sharpInstance.toFile(outputPath);
     
   return outputFilename;
+};
+
+// Download external image and convert to WebP
+const downloadAndConvertToWebP = async (imageUrl, outputFilename) => {
+  await ensureImageDirExists();
+  const outputPath = path.join(IMAGE_DIR, outputFilename);
+  
+  const response = await axios.get(imageUrl, { 
+    responseType: 'arraybuffer',
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
+  });
+  
+  const contentType = response.headers['content-type'];
+  const isWebp = contentType === 'image/webp' || imageUrl.toLowerCase().endsWith('.webp');
+  
+  let sharpInstance = sharp(response.data)
+    .resize(800, 1200, { fit: 'cover', withoutEnlargement: true });
+    
+  if (!isWebp) {
+    sharpInstance = sharpInstance.webp({ quality: 85 });
+  }
+
+  await sharpInstance.toFile(outputPath);
+    
+  return outputFilename;
+};
+
+const formatNameForFile = (name) => {
+    return name.replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_').toLowerCase();
 };
 
 // Delete old image file
@@ -104,7 +142,8 @@ export const addCelebrity = async (req, res) => {
     
     // If file was uploaded, convert to WebP
     if (imageFile) {
-      const webpFilename = `celeb_${newId}_${Date.now()}.webp`;
+      const formattedName = formatNameForFile(name);
+      const webpFilename = `celeb_${newId}_${formattedName}.webp`;
       await convertToWebP(imageFile.path, webpFilename);
       
       // Delete original uploaded file
@@ -112,6 +151,16 @@ export const addCelebrity = async (req, res) => {
       
       // Use relative path for local images
       finalImagePath = `/api/celebrities/images/${webpFilename}`;
+    } else if (image && /^https?:\/\//i.test(image)) {
+      try {
+        const formattedName = formatNameForFile(name);
+        const webpFilename = `celeb_${newId}_${formattedName}.webp`;
+        await downloadAndConvertToWebP(image, webpFilename);
+        finalImagePath = `/api/celebrities/images/${webpFilename}`;
+      } catch (err) {
+        console.error("Error downloading image from URL:", err.message);
+        return res.status(400).json({ message: 'Failed to download image from the provided URL' });
+      }
     }
 
     const newCelebrity = { id: newId, name, image: finalImagePath };
@@ -154,8 +203,10 @@ export const updateCelebrity = async (req, res) => {
       let finalImagePath = image || oldCelebrity.image;
       
       // If new file was uploaded, convert to WebP
+      const celebrityName = name || oldCelebrity.name;
       if (imageFile) {
-        const webpFilename = `celeb_${id}_${Date.now()}.webp`;
+        const formattedName = formatNameForFile(celebrityName);
+        const webpFilename = `celeb_${id}_${formattedName}.webp`;
         await convertToWebP(imageFile.path, webpFilename);
         
         // Delete original uploaded file
@@ -168,6 +219,22 @@ export const updateCelebrity = async (req, res) => {
         }
         
         finalImagePath = `/api/celebrities/images/${webpFilename}`;
+      } else if (image && /^https?:\/\//i.test(image) && image !== oldCelebrity.image) {
+        try {
+          const formattedName = formatNameForFile(celebrityName);
+          const webpFilename = `celeb_${id}_${formattedName}.webp`;
+          await downloadAndConvertToWebP(image, webpFilename);
+          
+          if (oldCelebrity.image && oldCelebrity.image.includes('/api/celebrities/images/')) {
+            const oldFilename = path.basename(oldCelebrity.image);
+            await deleteImageFile(oldFilename);
+          }
+          
+          finalImagePath = `/api/celebrities/images/${webpFilename}`;
+        } catch (err) {
+          console.error("Error downloading image from URL:", err.message);
+          return res.status(400).json({ message: 'Failed to download image from the provided URL' });
+        }
       }
       
       celebrities[index] = { ...oldCelebrity, name: name || oldCelebrity.name, image: finalImagePath };
@@ -208,6 +275,42 @@ export const updateCelebrity = async (req, res) => {
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: 'Error deleting data' });
+    }
+  };
+
+  export const downloadImage = async (req, res) => {
+    await ensureFileExists();
+    try {
+      const { id, name, url } = req.body;
+      if (!name || !url) {
+        return res.status(400).json({ message: 'Name and image URL are required' });
+      }
+
+      if (!/^https?:\/\//i.test(url)) {
+        return res.status(400).json({ message: 'Valid image URL is required' });
+      }
+      
+      let celebId = id;
+      if (!celebId) {
+        const fileContent = await fs.readFile(DATA_FILE, 'utf-8');
+        const celebrities = JSON.parse(fileContent);
+        const maxId = celebrities.reduce((max, c) => {
+            const currentId = parseInt(c.id);
+            return !isNaN(currentId) && currentId > max ? currentId : max;
+        }, 0);
+        celebId = (maxId + 1).toString();
+      }
+
+      const formattedName = formatNameForFile(name);
+      const webpFilename = `celeb_${celebId}_${formattedName}.webp`;
+      await downloadAndConvertToWebP(url, webpFilename);
+      
+      const finalImagePath = `/api/celebrities/images/${webpFilename}`;
+      res.json({ message: 'Image downloaded successfully', image: finalImagePath });
+
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Error downloading image' });
     }
   };
 

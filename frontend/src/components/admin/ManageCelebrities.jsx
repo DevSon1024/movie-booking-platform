@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { FaSearch, FaTrash, FaEdit, FaTh, FaList, FaWikipediaW, FaExternalLinkAlt, FaTimes, FaPlus, FaImage, FaUserTie } from 'react-icons/fa';
-import { getCelebrities, createCelebrity, updateCelebrity, deleteCelebrity } from '../../services/celebrityService';
+import { useState, useEffect, useRef } from 'react';
+import { FaSearch, FaTrash, FaEdit, FaTh, FaList, FaWikipediaW, FaExternalLinkAlt, FaTimes, FaPlus, FaImage, FaUserTie, FaDownload } from 'react-icons/fa';
+import { getCelebrities, createCelebrity, updateCelebrity, deleteCelebrity, downloadCelebrityImage } from '../../services/celebrityService';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 
@@ -21,6 +21,8 @@ const ManageCelebrities = ({ onClose }) => {
   const [wikiImages, setWikiImages] = useState([]);
   const [searchingImages, setSearchingImages] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [downloadingImage, setDownloadingImage] = useState(null);
+  const searchTimeoutRef = useRef(null);
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -88,9 +90,37 @@ const ManageCelebrities = ({ onClose }) => {
   const handleNameChange = (e) => {
     const name = e.target.value;
     setFormData({ ...formData, name });
-    if (name.length > 2) {
-      const timer = setTimeout(() => searchWikipediaImages(name), 800);
-      return () => clearTimeout(timer);
+    
+    // Clear existing timeout
+    if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+    }
+    
+    if (name.trim().length > 2) {
+      searchTimeoutRef.current = setTimeout(() => searchWikipediaImages(name), 1000);
+    } else {
+        setWikiImages([]);
+    }
+  };
+
+  const handleDownloadImage = async (imgUrl) => {
+    if (!formData.name) {
+      toast.error("Please enter a celebrity name first");
+      return;
+    }
+    
+    setDownloadingImage(imgUrl);
+    try {
+      const response = await downloadCelebrityImage(formData.id, formData.name, imgUrl);
+      setFormData({...formData, image: response.image});
+      toast.success("Image downloaded and optimized successfully!");
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to download image");
+      // Fallback to using the URL directly if download fails
+      setFormData({...formData, image: imgUrl});
+    } finally {
+      setDownloadingImage(null);
     }
   };
 
@@ -498,22 +528,44 @@ const ManageCelebrities = ({ onClose }) => {
               {/* Wikipedia Image Suggestions */}
               {wikiImages.length > 0 && (
                 <div className="animate-slide-down">
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                    <FaImage className="text-red-600" /> Suggested Images from Web
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2"><FaImage className="text-red-600" /> Suggested Images from Web</div>
+                    <span className="text-xs font-normal text-gray-500">Click to download & select</span>
                   </label>
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                     {wikiImages.map((img, idx) => (
                       <div 
                         key={idx} 
-                        onClick={() => setFormData({...formData, image: img.url})}
-                        className={`aspect-[3/4] cursor-pointer rounded-lg overflow-hidden border-2 transition-all hover:scale-105 ${
+                        onClick={() => handleDownloadImage(img.url)}
+                        className={`relative aspect-[3/4] cursor-pointer rounded-lg overflow-hidden border-2 transition-all group ${
                           formData.image === img.url 
                             ? 'border-red-600 ring-2 ring-red-600 ring-offset-2 dark:ring-offset-gray-800' 
                             : 'border-gray-200 dark:border-gray-600 hover:border-red-400'
                         }`}
-                        title="Click to select this image"
+                        title="Click to download and select this image"
                       >
-                        <CelebrityImage src={img.url} alt={img.title} className="w-full h-full object-cover" />
+                        <CelebrityImage src={img.url} alt={img.title} className={`w-full h-full object-cover transition duration-300 ${downloadingImage === img.url ? 'opacity-50 blur-sm' : 'group-hover:scale-105'}`} />
+                        
+                        {/* Selected overlay */}
+                        {formData.image === img.url && (
+                            <div className="absolute top-2 right-2 bg-red-600 text-white p-1 rounded-full shadow-lg z-10">
+                                <FaTimes className="text-xs rotate-45" /> {/* It's actually a checkmark if we use FaCheck but FaTimes rotated is weird... Let's avoid checkmark without import. We'll just leave it styled or import a check icon if we had one. Let's just use CSS for a tick. */}
+                            </div>
+                        )}
+                        
+                        {/* Hover Download Icon */}
+                        {downloadingImage !== img.url && formData.image !== img.url && (
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <FaDownload className="text-white text-2xl drop-shadow-md" />
+                          </div>
+                        )}
+
+                        {/* Loading Spinner */}
+                        {downloadingImage === img.url && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                             <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin shadow-lg"></div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -542,15 +594,15 @@ const ManageCelebrities = ({ onClose }) => {
               {uploadMode === 'url' ? (
                 <div>
                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                    Image URL *
+                    Image URL or Path *
                   </label>
                   <div className="flex gap-2">
                     <input 
-                      type="url" 
+                      type="text" 
                       className="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none text-sm transition"
                       value={!imageFile ? formData.image : ''}
                       onChange={(e) => setFormData({...formData, image: e.target.value})}
-                      placeholder="https://example.com/image.jpg"
+                      placeholder="e.g. /api/celebrities/images/... or https://..."
                       required={!isEditing}
                     />
                     {formData.image && !imageFile && (

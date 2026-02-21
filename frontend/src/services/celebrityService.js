@@ -23,3 +23,8 @@ export const deleteCelebrity = async (id) => {
     const response = await api.delete(`/celebrities/${id}`);
     return response.data;
 };
+
+export const downloadCelebrityImage = async (id, name, url) => {
+    const response = await api.post('/celebrities/download', { id, name, url });
+    return response.data;
+};

@@ -2,7 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { getCelebrities, addCelebrity, updateCelebrity, deleteCelebrity } from '../controllers/celebrityController.js';
+import { getCelebrities, addCelebrity, updateCelebrity, deleteCelebrity, downloadImage } from '../controllers/celebrityController.js';
 import { protect, admin } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
@@ -49,6 +49,7 @@ import { serveImage } from '../controllers/celebrityController.js';
 router.get('/images/:filename', serveImage);
 
 // Admin only routes with file upload support
+router.post('/download', protect, admin, downloadImage);
 router.post('/', protect, admin, upload.single('imageFile'), addCelebrity);
 router.put('/:id', protect, admin, upload.single('imageFile'), updateCelebrity);
 router.delete('/:id', protect, admin, deleteCelebrity);
