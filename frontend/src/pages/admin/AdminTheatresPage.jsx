@@ -1,13 +1,27 @@
-import { useState, useEffect } from 'react';
-import { FaPlus, FaTrash, FaEdit, FaMapMarkerAlt, FaFilm } from 'react-icons/fa';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { FaPlus, FaTrash, FaEdit, FaMapMarkerAlt, FaFilm, FaSearch } from 'react-icons/fa';
 import { getTheatres, createTheatre, updateTheatre, deleteTheatre } from '../../services/theatreService';
 import toast from 'react-hot-toast';
 import TheatreForm from '../../components/admin/TheatreForm'; // New Component
 
 const AdminTheatresPage = () => {
   const [theatres, setTheatres] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTheatre, setEditingTheatre] = useState(null);
+  const searchInputRef = useRef(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // '?' is Shift + /
+      if (e.key === '?' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => { fetchTheatres(); }, []);
 
@@ -41,6 +55,14 @@ const AdminTheatresPage = () => {
     }
   };
 
+  const filteredTheatres = useMemo(() => {
+    if (!searchQuery) return theatres;
+    return theatres.filter(t => 
+      t.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      t.city.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [theatres, searchQuery]);
+
   return (
     <div className="p-2 sm:p-6">
       <div className="flex justify-between items-center mb-8">
@@ -53,8 +75,24 @@ const AdminTheatresPage = () => {
         </button>
       </div>
 
+      {/* Search Bar */}
+      <div className="relative mb-6">
+        <div className="absolute top-3.5 right-4 pointer-events-none">
+           <kbd className="hidden sm:inline-block bg-gray-100 dark:bg-gray-700 text-gray-400 text-xs px-2 py-0.5 rounded border border-gray-200 dark:border-gray-600 font-mono shadow-sm">Shift + /</kbd>
+        </div>
+        <FaSearch className="absolute left-4 top-3.5 text-gray-400" />
+        <input 
+          ref={searchInputRef}
+          type="text" 
+          placeholder="Search theatres by name or city..." 
+          className="w-full bg-white dark:bg-gray-800 pl-12 pr-4 py-3 rounded-xl border-none shadow-sm focus:ring-2 focus:ring-blue-500 dark:text-white transition-all"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)} 
+        />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {theatres.map(t => (
+        {filteredTheatres.map(t => (
           <div key={t._id} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 relative hover:translate-y-[-2px] transition-all">
              <div className="flex justify-between items-start mb-2">
                 <h3 className="text-xl font-bold text-gray-800 dark:text-white">{t.name}</h3>
@@ -76,6 +114,11 @@ const AdminTheatresPage = () => {
              </div>
           </div>
         ))}
+        {filteredTheatres.length === 0 && (
+          <div className="col-span-full py-12 text-center text-gray-500 dark:text-gray-400">
+            No theatres found matching your search.
+          </div>
+        )}
       </div>
 
       {isModalOpen && (
