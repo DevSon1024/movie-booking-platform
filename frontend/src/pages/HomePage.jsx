@@ -260,10 +260,13 @@ const HomePage = () => {
                         key={`poster-${movie._id}`}
                         className={`absolute flex justify-center items-center h-[480px] lg:h-[525px] group perspective-1000 transition-all duration-1000 ease-out ${currentHeroSlide === index ? 'opacity-100 translate-x-0 scale-100 rotate-0 z-20' : 'opacity-0 translate-x-12 scale-95 rotate-6 z-0 pointer-events-none'}`}
                       >
+                          {/* Pseudo-element for the blurry glow border */}
+                          <div className="absolute inset-0 max-w-[320px] lg:max-w-[350px] mx-auto h-[480px] xl:h-[525px] rounded-2xl ring-4 ring-white/10 opacity-0 group-hover:opacity-100 blur-[8px] transition-all duration-500 z-10 pointer-events-none"></div>
+
                           <CachedImage 
                             src={movie.posterUrl} 
                             alt={movie.title} 
-                            className="h-full w-auto max-w-[320px] lg:max-w-[350px] object-cover rounded-2xl border-4 border-transparent group-hover:border-white/30 transition-all duration-500 shadow-[0_30px_60px_rgba(0,0,0,0.7)] hover:shadow-[0_40px_80px_rgba(0,0,0,0.9)] bg-gray-900"
+                            className="h-full w-auto max-w-[320px] lg:max-w-[350px] object-cover rounded-2xl transition-all duration-500 shadow-[0_30px_60px_rgba(0,0,0,0.7)] hover:shadow-[0_40px_80px_rgba(0,0,0,0.9)] bg-gray-900 relative z-20"
                             fallbackSrc="/placeholder-movie.svg"
                             lazy={false}
                           />

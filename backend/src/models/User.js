@@ -32,6 +32,12 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: true,
     },
+    paymentOptions: {
+        upiId: { type: String, default: '' },
+        cardNumber: { type: String, default: '' },
+        expiryDate: { type: String, default: '' },
+        cvv: { type: String, default: '' },
+    },
     lastLogin: {
         type: Date,
         default: null,

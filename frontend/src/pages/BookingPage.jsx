@@ -16,10 +16,12 @@ import {
   FaCalendarAlt,
   FaClock,
   FaMapMarkerAlt,
-  FaTheaterMasks,
   FaHome,
   FaMobileAlt,
-  FaQrcode
+  FaQrcode,
+  FaEye,
+  FaEyeSlash,
+  FaTheaterMasks
 } from "react-icons/fa";
 
 const BookingPage = () => {
@@ -38,6 +40,10 @@ const BookingPage = () => {
   // Payment State
   const [paymentMethod, setPaymentMethod] = useState("UPI");
   const [upiId, setUpiId] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
+  const [cvv, setCvv] = useState("");
+  const [showCvv, setShowCvv] = useState(false);
   const [upiWaiting, setUpiWaiting] = useState(false);
 
   useEffect(() => {
@@ -53,8 +59,23 @@ const BookingPage = () => {
       }
     };
 
+    const fetchProfile = async () => {
+      try {
+        const { data } = await api.get('/users/profile');
+        if (data.paymentOptions) {
+          if (data.paymentOptions.upiId) setUpiId(data.paymentOptions.upiId);
+          if (data.paymentOptions.cardNumber) setCardNumber(data.paymentOptions.cardNumber);
+          if (data.paymentOptions.expiryDate) setExpiryDate(data.paymentOptions.expiryDate);
+          if (data.paymentOptions.cvv) setCvv(data.paymentOptions.cvv);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user profile payment options:", error);
+      }
+    };
+
     if (id) {
       fetchShow();
+      fetchProfile();
     }
   }, [id]);
 
@@ -492,6 +513,7 @@ const BookingPage = () => {
                                 value={upiId}
                                 onChange={(e) => setUpiId(e.target.value)}
                                 disabled={processing}
+                                autoComplete="off"
                                 className="w-full bg-gray-50 dark:bg-gray-700 p-4 rounded-xl text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none transition-all text-center md:text-left text-lg font-medium tracking-wide"
                                 required
                               />
@@ -547,7 +569,7 @@ const BookingPage = () => {
                           </div>
                       </div>
                     ) : (
-                      <form onSubmit={processPaymentAndBook} className="space-y-5 max-w-md mx-auto md:ml-0">
+                      <form onSubmit={processPaymentAndBook} className="space-y-5 max-w-md mx-auto md:ml-0" autoComplete="off">
                         <div>
                           <label className="text-sm text-gray-700 dark:text-gray-300 font-medium ml-1 block mb-2">
                             Card Number
@@ -556,7 +578,10 @@ const BookingPage = () => {
                             type="text"
                             placeholder="1234 5678 9012 3456"
                             maxLength="19"
+                            value={cardNumber}
+                            onChange={(e) => setCardNumber(e.target.value)}
                             disabled={processing}
+                            autoComplete="off"
                             className="w-full bg-gray-50 dark:bg-gray-700 p-4 rounded-xl text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none transition-all tracking-widest font-mono"
                             required
                           />
@@ -570,7 +595,10 @@ const BookingPage = () => {
                               type="text"
                               placeholder="MM/YY"
                               maxLength="5"
+                              value={expiryDate}
+                              onChange={(e) => setExpiryDate(e.target.value)}
                               disabled={processing}
+                              autoComplete="off"
                               className="w-full bg-gray-50 dark:bg-gray-700 p-4 rounded-xl text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none transition-all text-center"
                               required
                             />
@@ -579,14 +607,26 @@ const BookingPage = () => {
                             <label className="text-sm text-gray-700 dark:text-gray-300 font-medium ml-1 block mb-2">
                               CVV
                             </label>
-                            <input
-                              type="password"
-                              placeholder="***"
-                              maxLength="3"
-                              disabled={processing}
-                              className="w-full bg-gray-50 dark:bg-gray-700 p-4 rounded-xl text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none transition-all text-center"
-                              required
-                            />
+                            <div className="relative">
+                              <input
+                                type={showCvv ? "text" : "password"}
+                                placeholder="***"
+                                maxLength="4"
+                                value={cvv}
+                                onChange={(e) => setCvv(e.target.value)}
+                                disabled={processing}
+                                autoComplete="new-password"
+                                className="w-full bg-gray-50 dark:bg-gray-700 p-4 pr-12 rounded-xl text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none transition-all text-center"
+                                required
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowCvv(!showCvv)}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                              >
+                                {showCvv ? <FaEyeSlash /> : <FaEye />}
+                              </button>
+                            </div>
                           </div>
                         </div>
         

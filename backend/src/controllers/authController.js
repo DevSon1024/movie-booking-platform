@@ -87,6 +87,7 @@ const getProfile = async (req, res) => {
       role: user.role,
       city: user.city || '',
       phone: user.phone || '',
+      paymentOptions: user.paymentOptions || { upiId: '', cardNumber: '', expiryDate: '', cvv: '' },
       isProfileComplete,
       createdAt: user.createdAt,
     });
@@ -101,7 +102,7 @@ const getProfile = async (req, res) => {
 // @access  Private
 const updateProfile = async (req, res) => {
   try {
-    const { name, email, city, phone } = req.body;
+    const { name, email, city, phone, paymentOptions } = req.body;
 
     const user = await User.findById(req.user._id);
 
@@ -122,6 +123,16 @@ const updateProfile = async (req, res) => {
     if (email) user.email = email;
     if (city !== undefined) user.city = city;
     if (phone !== undefined) user.phone = phone;
+    
+    // Update payment options if provided
+    if (paymentOptions) {
+      user.paymentOptions = {
+        upiId: paymentOptions.upiId !== undefined ? paymentOptions.upiId : user.paymentOptions?.upiId || '',
+        cardNumber: paymentOptions.cardNumber !== undefined ? paymentOptions.cardNumber : user.paymentOptions?.cardNumber || '',
+        expiryDate: paymentOptions.expiryDate !== undefined ? paymentOptions.expiryDate : user.paymentOptions?.expiryDate || '',
+        cvv: paymentOptions.cvv !== undefined ? paymentOptions.cvv : user.paymentOptions?.cvv || '',
+      };
+    }
 
     await user.save();
 
@@ -134,6 +145,7 @@ const updateProfile = async (req, res) => {
       role: user.role,
       city: user.city,
       phone: user.phone,
+      paymentOptions: user.paymentOptions,
       isProfileComplete,
     });
   } catch (error) {

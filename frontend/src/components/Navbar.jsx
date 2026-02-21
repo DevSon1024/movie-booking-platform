@@ -196,9 +196,9 @@ const Navbar = () => {
                         <FaStar className="mr-3 text-gray-400" /> My Reviews
                       </Link>
                       
-                      <button className="w-full flex items-center px-5 py-3 text-base text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <Link to="/payment-options" className="w-full flex items-center px-5 py-3 text-base text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700" onClick={() => setIsProfileOpen(false)}>
                         <FaCreditCard className="mr-3 text-gray-400" /> Payment Options
-                      </button>
+                      </Link>
                     </div>
 
                     <div className="border-t border-gray-100 dark:border-gray-700">
@@ -254,6 +254,9 @@ const Navbar = () => {
                 </Link>
                 <Link to="/my-reviews" onClick={() => setIsMobileOpen(false)} className="flex items-center w-full px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 text-base">
                   <FaStar className="mr-3" /> My Reviews
+                </Link>
+                <Link to="/payment-options" onClick={() => setIsMobileOpen(false)} className="flex items-center w-full px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 text-base">
+                  <FaCreditCard className="mr-3" /> Payment Options
                 </Link>
                 
                 {userInfo.role === "admin" && (

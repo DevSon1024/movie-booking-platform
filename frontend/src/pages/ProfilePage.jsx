@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { setCredentials } from '../redux/slices/authSlice';
 import api from '../services/api';
@@ -9,10 +10,11 @@ import { FaUser, FaLock, FaEye, FaEyeSlash, FaSave, FaTimes } from 'react-icons/
 
 const ProfilePage = () => {
   const dispatch = useDispatch();
+  const location = useLocation();
   const { userInfo } = useSelector((state) => state.auth);
   const { currencySymbol } = useSelector((state) => state.settings);
   
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState(location.state?.tab || 'profile');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   
