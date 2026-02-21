@@ -1,14 +1,14 @@
 import { FaTicketAlt, FaCalendarAlt, FaMapMarkerAlt, FaCheckCircle, FaQrcode } from 'react-icons/fa';
 import { format } from 'date-fns';
 
-const TicketCard = ({ booking, currencySymbol, onShowQR }) => {
+const TicketCard = ({ booking, currencySymbol, onShowQR, viewMode = 'list' }) => {
   if (!booking.show || !booking.movie) return null;
 
   const showTime = new Date(booking.show.startTime);
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all border border-gray-100 dark:border-gray-700 flex flex-col md:flex-row">
-      <div className="md:w-48 h-48 md:h-auto relative">
+    <div className={`bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all border border-gray-100 dark:border-gray-700 flex ${viewMode === 'grid' ? 'flex-col' : 'flex-col md:flex-row'}`}>
+      <div className={`${viewMode === 'grid' ? 'w-full h-48 sm:h-64' : 'md:w-48 h-48 md:h-auto'} relative shrink-0`}>
         <img src={booking.movie.posterUrl} alt={booking.movie.title} className="w-full h-full object-cover" />
         <div className="absolute top-0 left-0 bg-black/60 text-white text-xs px-2 py-1 rounded-br-lg">
           {booking.seats.length} Seats
@@ -17,9 +17,9 @@ const TicketCard = ({ booking, currencySymbol, onShowQR }) => {
 
       <div className="flex-1 p-5 flex flex-col justify-between">
         <div>
-          <div className="flex justify-between items-start">
-             <h3 className="text-xl font-bold text-gray-900 dark:text-white">{booking.movie.title}</h3>
-             <span className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs px-2 py-1 rounded-full font-bold uppercase flex items-center gap-1">
+          <div className={`flex justify-between items-start gap-2 ${viewMode === 'grid' ? 'flex-col' : ''}`}>
+             <h3 className="text-xl font-bold text-gray-900 dark:text-white leading-tight">{booking.movie.title}</h3>
+             <span className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-[10px] px-2 py-1 rounded-full font-bold uppercase flex items-center gap-1 shrink-0">
                <FaCheckCircle size={10} /> Confirmed
              </span>
           </div>

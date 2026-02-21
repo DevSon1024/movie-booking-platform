@@ -187,6 +187,10 @@ const Navbar = () => {
                       <Link to="/profile" className="flex items-center px-5 py-3 text-base text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700" onClick={() => setIsProfileOpen(false)}>
                         <FaUserCircle className="mr-3 text-gray-400" /> My Profile
                       </Link>
+
+                      <Link to="/my-bookings" className="flex items-center px-5 py-3 text-base text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700" onClick={() => setIsProfileOpen(false)}>
+                        <FaTicketAlt className="mr-3 text-gray-400" /> My Bookings
+                      </Link>
                       
                       <Link to="/my-reviews" className="flex items-center px-5 py-3 text-base text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700" onClick={() => setIsProfileOpen(false)}>
                         <FaStar className="mr-3 text-gray-400" /> My Reviews
@@ -245,8 +249,8 @@ const Navbar = () => {
                 <Link to="/profile" onClick={() => setIsMobileOpen(false)} className="flex items-center px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 text-base">
                   <FaUserCircle className="mr-3" /> My Profile
                 </Link>
-                <Link to="/profile" onClick={() => setIsMobileOpen(false)} className="flex items-center px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 text-base">
-                  <FaHistory className="mr-3" /> My Tickets
+                <Link to="/my-bookings" onClick={() => setIsMobileOpen(false)} className="flex items-center px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 text-base">
+                  <FaTicketAlt className="mr-3" /> My Bookings
                 </Link>
                 <Link to="/my-reviews" onClick={() => setIsMobileOpen(false)} className="flex items-center w-full px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 text-base">
                   <FaStar className="mr-3" /> My Reviews

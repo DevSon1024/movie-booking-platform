@@ -4,10 +4,8 @@ import { setCredentials } from '../redux/slices/authSlice';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { getProfile, updateProfile, changePassword } from '../services/profileService';
-import TicketCard from '../components/Booking/TicketCard';
-import QRModal from '../components/Booking/QRModal';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { FaTicketAlt, FaUser, FaLock, FaEye, FaEyeSlash, FaSave, FaTimes } from 'react-icons/fa';
+import { FaUser, FaLock, FaEye, FaEyeSlash, FaSave, FaTimes } from 'react-icons/fa';
 
 const ProfilePage = () => {
   const dispatch = useDispatch();
@@ -38,11 +36,6 @@ const ProfilePage = () => {
     new: false,
     confirm: false,
   });
-  
-  // Bookings
-  const [bookings, setBookings] = useState([]);
-  const [selectedBooking, setSelectedBooking] = useState(null);
-  const [showQRModal, setShowQRModal] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -51,10 +44,7 @@ const ProfilePage = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [profileData, bookingsData] = await Promise.all([
-        getProfile(),
-        api.get('/bookings/mybookings').then(res => res.data),
-      ]);
+      const profileData = await getProfile();
       
       setProfile({
         name: profileData.name || '',
@@ -62,8 +52,6 @@ const ProfilePage = () => {
         city: profileData.city || '',
         phone: profileData.phone || '',
       });
-      
-      setBookings(bookingsData);
     } catch (error) {
       toast.error('Failed to load profile data');
       console.error(error);
@@ -160,11 +148,6 @@ const ProfilePage = () => {
     });
   };
 
-  const handleShowQR = (booking) => {
-    setSelectedBooking(booking);
-    setShowQRModal(true);
-  };
-
   const togglePasswordVisibility = (field) => {
     setShowPasswords({
       ...showPasswords,
@@ -209,16 +192,6 @@ const ProfilePage = () => {
               }`}
             >
               <FaLock /> Change Password
-            </button>
-            <button
-              onClick={() => setActiveTab('bookings')}
-              className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${
-                activeTab === 'bookings'
-                  ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-b-2 border-red-600 dark:border-red-400'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
-              }`}
-            >
-              <FaTicketAlt /> My Bookings ({bookings.length})
             </button>
           </div>
 
@@ -422,48 +395,9 @@ const ProfilePage = () => {
                 </div>
               </form>
             )}
-
-            {/* Bookings Tab */}
-            {activeTab === 'bookings' && (
-              <div>
-                <div className="mb-6">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                    My Bookings
-                  </h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    View and manage your movie tickets
-                  </p>
-                </div>
-
-                {bookings.length === 0 ? (
-                  <div className="text-center py-12">
-                    <FaTicketAlt className="text-6xl text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                    <p className="text-lg text-gray-500 dark:text-gray-400">No bookings found</p>
-                    <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
-                      Book your first movie ticket to see it here
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid gap-6">
-                    {bookings.map((booking) => (
-                      <TicketCard
-                        key={booking._id}
-                        booking={booking}
-                        currencySymbol={currencySymbol}
-                        onShowQR={handleShowQR}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </div>
       </div>
-
-      {showQRModal && selectedBooking && (
-        <QRModal booking={selectedBooking} onClose={() => setShowQRModal(false)} />
-      )}
     </div>
   );
 };

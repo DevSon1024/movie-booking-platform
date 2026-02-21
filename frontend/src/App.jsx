@@ -14,6 +14,7 @@ const RegisterPage = lazy(() => import("./pages/RegisterPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const MoviePage = lazy(() => import("./pages/MoviePage"));
 const BookingPage = lazy(() => import("./pages/BookingPage"));
+const MyBookingsPage = lazy(() => import("./pages/MyBookingsPage"));
 const MyReviews = lazy(() => import("./pages/MyReviews"));
 
 // Lazy load route components
@@ -67,6 +68,7 @@ function App() {
             }
           />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          <Route path="/my-bookings" element={<ProtectedRoute><MyBookingsPage /></ProtectedRoute>} />
           <Route path="/my-reviews" element={<ProtectedRoute><MyReviews /></ProtectedRoute>} />
 
           {/* Admin Routes */}
