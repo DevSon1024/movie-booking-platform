@@ -130,13 +130,21 @@ export const addCelebrity = async (req, res) => {
       return res.status(400).json({ message: 'Celebrity already exists' });
     }
 
-    // Generate Next ID
-    const maxId = celebrities.reduce((max, c) => {
-        const currentId = parseInt(c.id);
-        return !isNaN(currentId) && currentId > max ? currentId : max;
-    }, 0);
-    
-    const newId = (maxId + 1).toString();
+    // Generate Next ID by finding the first missing positive integer
+    const existingIds = celebrities
+        .map(c => parseInt(c.id))
+        .filter(id => !isNaN(id) && id > 0)
+        .sort((a, b) => a - b);
+        
+    let nextId = 1;
+    for (const id of existingIds) {
+        if (id === nextId) {
+            nextId++;
+        } else if (id > nextId) {
+            break;
+        }
+    }
+    const newId = nextId.toString();
 
     let finalImagePath = image;
     
@@ -294,11 +302,21 @@ export const updateCelebrity = async (req, res) => {
       if (!celebId) {
         const fileContent = await fs.readFile(DATA_FILE, 'utf-8');
         const celebrities = JSON.parse(fileContent);
-        const maxId = celebrities.reduce((max, c) => {
-            const currentId = parseInt(c.id);
-            return !isNaN(currentId) && currentId > max ? currentId : max;
-        }, 0);
-        celebId = (maxId + 1).toString();
+        // Find the first missing positive integer ID
+        const existingIds = celebrities
+            .map(c => parseInt(c.id))
+            .filter(id => !isNaN(id) && id > 0)
+            .sort((a, b) => a - b);
+            
+        let nextId = 1;
+        for (const id of existingIds) {
+            if (id === nextId) {
+                nextId++;
+            } else if (id > nextId) {
+                break;
+            }
+        }
+        celebId = nextId.toString();
       }
 
       const formattedName = formatNameForFile(name);
