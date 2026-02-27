@@ -120,7 +120,14 @@ const AdminShowsPage = () => {
     }
   };
 
-  const calculateShowStatus = (show) => {
+  const calculateShowStatus = (show, isTable = false) => {
+    if (isTable) {
+      const isEnded = show.endTime ? new Date(show.endTime) < new Date() : new Date(show.startTime) < new Date();
+      if (isEnded) {
+         return { label: 'Ended', classes: 'text-gray-500 bg-gray-200 dark:bg-gray-700 dark:text-gray-400' };
+      }
+    }
+
     const totalSeats = show.seats?.length || 0;
     const bookedSeats = show.seats?.filter(s => s.isBooked).length || 0;
     if (totalSeats === 0) return { label: 'N/A', classes: 'text-gray-500 bg-gray-100' };
@@ -328,8 +335,8 @@ const AdminShowsPage = () => {
                         </div>
                     </td>
                     <td className="p-4 text-center">
-                       <span className={`px-2 py-1 rounded text-xs font-bold ${calculateShowStatus(show).classes}`}>
-                         {calculateShowStatus(show).label}
+                       <span className={`px-2 py-1 rounded text-xs font-bold ${calculateShowStatus(show, true).classes}`}>
+                         {calculateShowStatus(show, true).label}
                        </span>
                     </td>
                     <td className="p-4 font-bold text-green-600">{currencySymbol}{show.price}</td>

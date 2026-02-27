@@ -203,9 +203,21 @@ const ManageCelebrities = ({ onClose }) => {
     resetForm();
   };
 
-  const filteredCelebrities = celebrities.filter(c => 
-    c.name.toLowerCase().includes(localSearch.toLowerCase())
-  );
+  const filteredCelebrities = celebrities.filter(c => {
+    const searchTerm = localSearch.toLowerCase().trim();
+    if (!searchTerm) return true;
+    
+    // Check if search term is a comma-separated list of IDs
+    const searchParts = searchTerm.split(',').map(s => s.trim()).filter(s => s);
+    const isIdSearch = searchParts.length > 0 && searchParts.every(part => !isNaN(part) && Number.isInteger(parseFloat(part)));
+    
+    if (isIdSearch) {
+        return searchParts.includes(c.id.toString());
+    }
+    
+    // Fallback to name search
+    return c.name.toLowerCase().includes(searchTerm);
+  });
 
   // Optimized Image Component with error handling
   const CelebrityImage = ({ src, alt, className }) => {
@@ -266,7 +278,7 @@ const ManageCelebrities = ({ onClose }) => {
                 <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
                 <input 
                   type="text" 
-                  placeholder="Search celebrities by name..."
+                  placeholder="Search celebrities by name or IDs (e.g. 19, 25, 33)..."
                   className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition text-sm"
                   value={localSearch}
                   onChange={(e) => setLocalSearch(e.target.value)}

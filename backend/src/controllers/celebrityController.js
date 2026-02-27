@@ -38,14 +38,15 @@ const convertToWebP = async (inputPath, outputFilename) => {
   
   const isWebp = inputPath.toLowerCase().endsWith('.webp');
   
-  let sharpInstance = sharp(inputPath)
-    .resize(800, 1200, { fit: 'cover', withoutEnlargement: true });
-    
-  if (!isWebp) {
-    sharpInstance = sharpInstance.webp({ quality: 85 });
+  if (isWebp) {
+      await fs.copyFile(inputPath, outputPath);
+      return outputFilename;
   }
   
-  await sharpInstance.toFile(outputPath);
+  await sharp(inputPath)
+    .resize(800, 1200, { fit: 'cover', withoutEnlargement: true })
+    .webp({ quality: 85 })
+    .toFile(outputPath);
     
   return outputFilename;
 };
@@ -65,14 +66,15 @@ const downloadAndConvertToWebP = async (imageUrl, outputFilename) => {
   const contentType = response.headers['content-type'];
   const isWebp = contentType === 'image/webp' || imageUrl.toLowerCase().endsWith('.webp');
   
-  let sharpInstance = sharp(response.data)
-    .resize(800, 1200, { fit: 'cover', withoutEnlargement: true });
-    
-  if (!isWebp) {
-    sharpInstance = sharpInstance.webp({ quality: 85 });
+  if (isWebp) {
+      await fs.writeFile(outputPath, response.data);
+      return outputFilename;
   }
-
-  await sharpInstance.toFile(outputPath);
+  
+  await sharp(response.data)
+    .resize(800, 1200, { fit: 'cover', withoutEnlargement: true })
+    .webp({ quality: 85 })
+    .toFile(outputPath);
     
   return outputFilename;
 };
