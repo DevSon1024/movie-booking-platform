@@ -88,7 +88,7 @@ const UserManagement = () => {
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white flex items-center gap-3">
-            <FaUsers className="text-red-600" />
+            {/* <FaUsers className="text-red-600" /> */}
             User Management
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">

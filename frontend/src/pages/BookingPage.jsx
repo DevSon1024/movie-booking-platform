@@ -181,7 +181,7 @@ const BookingPage = () => {
 
   const handleCloseSuccess = () => {
     setShowSuccessModal(false);
-    navigate("/profile");
+    navigate("/my-bookings");
   };
 
   if (loading) {

@@ -484,7 +484,7 @@ const AdminShowsPage = () => {
                            </td>
                            <td className="p-4 font-bold text-green-600">{currencySymbol}{booking.totalPrice}</td>
                            <td className="p-4 text-sm text-gray-600 dark:text-gray-400">
-                             {new Date(booking.createdAt).toLocaleString()}
+                             {new Date(booking.createdAt).toLocaleDateString('en-GB')}
                            </td>
                          </tr>
                        ))}
