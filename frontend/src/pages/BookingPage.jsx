@@ -21,8 +21,10 @@ import {
   FaQrcode,
   FaEye,
   FaEyeSlash,
-  FaTheaterMasks
+  FaTheaterMasks,
+  FaLock
 } from "react-icons/fa";
+import { socket, connectSocket, disconnectSocket } from "../services/socket";
 
 const BookingPage = () => {
   const { id } = useParams();
@@ -45,6 +47,98 @@ const BookingPage = () => {
   const [cvv, setCvv] = useState("");
   const [showCvv, setShowCvv] = useState(false);
   const [upiWaiting, setUpiWaiting] = useState(false);
+
+  // Socket & Lock State
+  const [lockedSeats, setLockedSeats] = useState({}); // { seatLabel: { userId, expiresAt } }
+  const [timeLeft, setTimeLeft] = useState(600); // 10 minutes in seconds
+  const { userInfo } = useSelector((state) => state.auth);
+
+  // Timer Effect
+  useEffect(() => {
+    let timer;
+    if (selectedSeats.length > 0 && timeLeft > 0) {
+      timer = setInterval(() => {
+        setTimeLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (timeLeft === 0 && selectedSeats.length > 0) {
+      // Time expired
+      toast.error("Seat validation time expired. Please select seats again.");
+      setSelectedSeats([]);
+      setShowPaymentModal(false);
+      setTimeLeft(600);
+    }
+
+    return () => clearInterval(timer);
+  }, [selectedSeats.length, timeLeft]);
+
+  // Socket Connection Effect
+  useEffect(() => {
+    if (!id || !userInfo?._id) return;
+
+    connectSocket();
+
+    socket.emit('joinShow', { showId: id });
+
+    socket.on('currentLocks', ({ showId, lockedSeats }) => {
+      if (showId === id) {
+        setLockedSeats(lockedSeats);
+      }
+    });
+
+    socket.on('seatLocked', ({ showId, seatLabel, userId, expiresAt }) => {
+      if (showId === id) {
+        setLockedSeats(prev => ({
+          ...prev,
+          [seatLabel]: { userId, expiresAt }
+        }));
+      }
+    });
+
+    socket.on('seatUnlocked', ({ showId, seatLabel }) => {
+      if (showId === id) {
+        setLockedSeats(prev => {
+          const newLocks = { ...prev };
+          delete newLocks[seatLabel];
+          return newLocks;
+        });
+        
+        // If the current user had this seat selected but someone else's timer forced an unlock
+        // (This is an edge case safety net)
+        if (selectedSeats.includes(seatLabel)) {
+           setSelectedSeats(current => current.filter(s => s !== seatLabel));
+        }
+      }
+    });
+
+    socket.on('seatsBooked', ({ showId, seats }) => {
+       if (showId === id) {
+          // Permanently update show state to mark as booked
+          setShow(prevShow => {
+             if (!prevShow) return prevShow;
+             const updatedSeats = prevShow.seats.map(seat => {
+                if (seats.includes(`${seat.row}${seat.number}`)) {
+                   return { ...seat, isBooked: true };
+                }
+                return seat;
+             });
+             return { ...prevShow, seats: updatedSeats };
+          });
+       }
+    });
+
+    socket.on('lockError', ({ message }) => {
+       toast.error(message);
+    });
+
+    return () => {
+      socket.off('currentLocks');
+      socket.off('seatLocked');
+      socket.off('seatUnlocked');
+      socket.off('seatsBooked');
+      socket.off('lockError');
+      disconnectSocket();
+    };
+  }, [id, userInfo?._id]); // Intentionally not including selectedSeats here for stability
 
   useEffect(() => {
     const fetchShow = async () => {
@@ -83,14 +177,37 @@ const BookingPage = () => {
     if (seat.isBooked) return;
 
     const seatLabel = `${seat.row}${seat.number}`;
+    
+    // Check if locked by someone ELSE
+    const isLockedByOther = lockedSeats[seatLabel] && lockedSeats[seatLabel].userId !== userInfo?._id;
+    if (isLockedByOther) {
+      toast.error('This seat is currently locked by another user');
+      return;
+    }
+
     if (selectedSeats.includes(seatLabel)) {
-      setSelectedSeats(selectedSeats.filter((s) => s !== seatLabel));
+      // Unselect & Unlock
+      const newSelected = selectedSeats.filter((s) => s !== seatLabel);
+      setSelectedSeats(newSelected);
+      socket.emit('unlockSeat', { showId: id, seatLabel, userId: userInfo?._id });
+      
+      // If no seats left, reset timer
+      if (newSelected.length === 0) {
+        setTimeLeft(600);
+      }
     } else {
+      // Select & Lock
       if (selectedSeats.length >= 10) {
         toast.error("You can select maximum 10 seats");
         return;
       }
       setSelectedSeats([...selectedSeats, seatLabel]);
+      socket.emit('lockSeat', { showId: id, seatLabel, userId: userInfo?._id });
+      
+      // If this is the FIRST seat picked, reset timer to full 10m
+      if (selectedSeats.length === 0) {
+         setTimeLeft(600);
+      }
     }
   };
 
@@ -342,7 +459,11 @@ const BookingPage = () => {
             <span className="text-gray-600 dark:text-gray-400 font-medium">Selected</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-gray-400 dark:bg-gray-800 opacity-40 rounded-t-lg"></div>
+            <div className="w-7 h-7 bg-yellow-400 hover:bg-yellow-500 dark:bg-yellow-600 opacity-80 rounded-t-lg"></div>
+            <span className="text-gray-600 dark:text-gray-400 font-medium">Locked</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 bg-red-500 hover:bg-red-600 dark:bg-red-600 opacity-90 rounded-t-lg"></div>
             <span className="text-gray-600 dark:text-gray-400 font-medium">Booked</span>
           </div>
         </div>
@@ -363,12 +484,17 @@ const BookingPage = () => {
                       .map((seat) => {
                         const seatLabel = `${seat.row}${seat.number}`;
                         const isSelected = selectedSeats.includes(seatLabel);
+                        const isTemporarilyLockedByOther = lockedSeats[seatLabel] && lockedSeats[seatLabel].userId !== userInfo?._id;
 
                         let seatClass =
                           "bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:scale-110 border border-gray-300 dark:border-gray-600";
                         
+                        if (isTemporarilyLockedByOther) {
+                          seatClass = "bg-yellow-400 dark:bg-yellow-600 text-yellow-900 dark:text-yellow-100 cursor-not-allowed border border-yellow-500 dark:border-yellow-700 opacity-80"
+                        }
+                        
                         if (seat.isBooked) {
-                          seatClass = "bg-gray-400 dark:bg-gray-800 text-gray-500 dark:text-gray-600 cursor-not-allowed opacity-40 border border-gray-500 dark:border-gray-700";
+                          seatClass = "bg-red-500 dark:bg-red-600 text-white cursor-not-allowed border border-red-600 dark:border-red-700 opacity-90";
                         }
                         
                         if (isSelected) {
@@ -380,13 +506,13 @@ const BookingPage = () => {
                           <button
                             key={seat._id}
                             onClick={() => handleSeatClick(seat)}
-                            disabled={seat.isBooked}
+                            disabled={seat.isBooked || isTemporarilyLockedByOther}
                             className={`w-9 h-9 md:w-11 md:h-11 rounded-t-xl text-[10px] md:text-xs transition-all duration-200 flex items-center justify-center font-semibold ${seatClass}`}
                           >
                             {isSelected ? (
                               <FaCheckCircle className="text-sm md:text-base" />
                             ) : (
-                              !seat.isBooked && seat.number
+                              !(seat.isBooked || isTemporarilyLockedByOther) && seat.number
                             )}
                           </button>
                         );
@@ -404,22 +530,36 @@ const BookingPage = () => {
         {selectedSeats.length > 0 && (
           <div className="fixed bottom-0 left-0 w-full bg-white dark:bg-gray-800 border-t-2 border-gray-200 dark:border-gray-700 p-4 shadow-2xl z-40 animate-slide-up">
             <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 max-w-4xl">
-              <div className="text-center sm:text-left">
-                <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">
-                  <FaTicketAlt className="inline mr-1" />
-                  {selectedSeats.length} Seat(s): <span className="font-semibold text-gray-900 dark:text-white">{selectedSeats.join(", ")}</span>
-                </p>
-                <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
-                  Total:{" "}
-                  <span className="text-green-600 dark:text-green-400">
-                    {currencySymbol}{totalPrice}
-                  </span>
-                </p>
+              <div className="flex-1 flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left">
+                <div>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">
+                    <FaTicketAlt className="inline mr-1" />
+                    {selectedSeats.length} Seat(s): <span className="font-semibold text-gray-900 dark:text-white">{selectedSeats.join(", ")}</span>
+                  </p>
+                  <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                    Total:{" "}
+                    <span className="text-green-600 dark:text-green-400">
+                      {currencySymbol}{totalPrice}
+                    </span>
+                  </p>
+                </div>
+                
+                {/* Countdown Timer */}
+                <div className="bg-orange-50 dark:bg-orange-900/20 px-4 py-2 rounded-lg border border-orange-200 dark:border-orange-800 flex items-center gap-3 ml-0 sm:ml-4">
+                  <FaClock className="text-orange-500 animate-pulse text-xl" />
+                  <div>
+                    <p className="text-[10px] uppercase font-bold text-orange-600 dark:text-orange-400">Seats Reserved</p>
+                    <p className="text-lg font-mono font-bold text-orange-700 dark:text-orange-300 leading-tight">
+                      {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+                    </p>
+                  </div>
+                </div>
               </div>
+              
               <button
                 onClick={handleCheckout}
-                disabled={processing}
-                className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 dark:from-red-500 dark:to-red-600 dark:hover:from-red-600 dark:hover:to-red-700 text-white px-8 py-4 rounded-xl font-bold shadow-lg transition-all hover:scale-105 disabled:opacity-50 flex items-center gap-2"
+                disabled={processing || timeLeft === 0}
+                className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 dark:from-red-500 dark:to-red-600 dark:hover:from-red-600 dark:hover:to-red-700 text-white px-8 py-4 rounded-xl font-bold shadow-lg transition-all hover:scale-105 disabled:opacity-50 flex items-center gap-2 whitespace-nowrap"
               >
                 <FaCreditCard />
                 Proceed to Pay

@@ -1,5 +1,6 @@
 import Booking from '../models/Booking.js';
 import Show from '../models/Show.js';
+import { isSeatLockedByAnotherUser, clearLocksAndEmitBooked } from '../services/socketService.js';
 
 // @desc    Create a new booking
 // @route   POST /api/bookings
@@ -17,7 +18,7 @@ const createBooking = async (req, res) => {
     throw new Error('Show not found');
   }
 
-  // 2. Validate Seat Availability
+  // 2. Validate Seat Availability (Permanent Booking)
   const isSeatTaken = show.seats.some(seat => 
     selectedSeats.includes(`${seat.row}${seat.number}`) && seat.isBooked
   );
@@ -25,6 +26,17 @@ const createBooking = async (req, res) => {
   if (isSeatTaken) {
     res.status(400);
     throw new Error('One or more selected seats are already booked');
+  }
+
+  // 2.5 Validate Temporary Socket Locks
+  // Prevent users from snatching seats locked by someone else's screen
+  const isLockedByOthers = selectedSeats.some(seatLabel => 
+    isSeatLockedByAnotherUser(showId, seatLabel, req.user._id)
+  );
+
+  if (isLockedByOthers) {
+     res.status(400);
+     throw new Error('One or more selected seats are temporarily locked by another user.');
   }
 
   // 3. Calculate Price
@@ -69,6 +81,9 @@ const createBooking = async (req, res) => {
         select: 'name address city' 
       }
     });
+    
+    // 7. Clear temporary locks and broadcast update to all connected clients
+    clearLocksAndEmitBooked(showId, selectedSeats, req.user._id);
     
     res.status(201).json(createdBooking);
 
