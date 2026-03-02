@@ -1,7 +1,9 @@
 import Booking from '../models/Booking.js';
 import Movie from '../models/Movie.js';
+import User from '../models/User.js';
+import Theatre from '../models/Theatre.js';
 
-// @desc    Get Admin Dashboard Stats (Revenue, Tickets, Active Movies)
+// @desc    Get Admin Dashboard Stats (Revenue, Tickets, Active Movies, Users, Theatres, Revenue Trend)
 // @route   GET /api/admin/stats
 // @access  Private/Admin
 const getDashboardStats = async (req, res) => {
@@ -20,7 +22,6 @@ const getDashboardStats = async (req, res) => {
     }
 
     // 2. Aggregate Revenue & Tickets Sold
-    // We match 'CONFIRMED' bookings and the optional date range
     const stats = await Booking.aggregate([
       {
         $match: {
@@ -41,13 +42,49 @@ const getDashboardStats = async (req, res) => {
     const ticketsSold = stats.length > 0 ? stats[0].totalTickets : 0;
 
     // 3. Count Active Movies (Status = 'RUNNING')
-    // Note: Active movies count usually reflects current state, independent of the date filter
     const activeMovies = await Movie.countDocuments({ status: 'RUNNING' });
+
+    // 4. Count Total Users & Theatres (global counts, not date-filtered)
+    const totalUsers = await User.countDocuments();
+    const totalTheatres = await Theatre.countDocuments();
+
+    // 5. Revenue Trend — daily breakdown of confirmed bookings
+    const revenueTrend = await Booking.aggregate([
+      {
+        $match: {
+          paymentStatus: 'CONFIRMED',
+          ...dateFilter,
+        },
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: '%Y-%m-%d', date: '$createdAt' },
+          },
+          dailyRevenue: { $sum: '$totalPrice' },
+          dailyTickets: { $sum: { $size: '$seats' } },
+        },
+      },
+      {
+        $sort: { _id: 1 },
+      },
+      {
+        $project: {
+          _id: 0,
+          date: '$_id',
+          dailyRevenue: 1,
+          dailyTickets: 1,
+        },
+      },
+    ]);
 
     res.json({
       revenue,
       ticketsSold,
       activeMovies,
+      totalUsers,
+      totalTheatres,
+      revenueTrend,
     });
   } catch (error) {
     res.status(500);
