@@ -1,9 +1,16 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../services/api';
+import { dummyAdmin } from '../../mockData/user';
+
+const useMockData = import.meta.env.VITE_USE_MOCK_DATA === 'true';
 
 // --- Async Thunks (API Calls) ---
 
 export const login = createAsyncThunk('auth/login', async (userData, { rejectWithValue }) => {
+  if (useMockData) {
+    return new Promise((resolve) => setTimeout(() => resolve(dummyAdmin), 500));
+  }
+  
   try {
     const response = await api.post('/users/login', userData);
     return response.data;
@@ -13,6 +20,10 @@ export const login = createAsyncThunk('auth/login', async (userData, { rejectWit
 });
 
 export const register = createAsyncThunk('auth/register', async (userData, { rejectWithValue }) => {
+  if (useMockData) {
+    return new Promise((resolve) => setTimeout(() => resolve(dummyAdmin), 500));
+  }
+  
   try {
     const response = await api.post('/users/register', userData);
     return response.data;
@@ -22,6 +33,10 @@ export const register = createAsyncThunk('auth/register', async (userData, { rej
 });
 
 export const logout = createAsyncThunk('auth/logout', async () => {
+  if (useMockData) {
+    return new Promise((resolve) => setTimeout(() => resolve(), 500));
+  }
+  
   await api.post('/users/logout');
 });
 

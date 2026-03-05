@@ -11,7 +11,8 @@ export const createMovie = async (movieData) => {
   const config = movieData instanceof FormData
     ? { headers: { 'Content-Type': undefined } }
     : { headers: { 'Content-Type': 'application/json' } };
-  const response = await api.post('/movies', movieData, config);  return response.data;
+  const response = await api.post('/movies', movieData, config);
+  return response.data;
 };
 
 // Admin: Update Movie

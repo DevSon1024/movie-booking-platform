@@ -53,6 +53,13 @@ const LoginPage = () => {
 
         {/* Form Card */}
         <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700">
+          {/* Demo Credentials Hint */}
+          <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 rounded-r-lg">
+            <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-1">Demo Credentials:</h3>
+            <p className="text-sm text-blue-700 dark:text-blue-400"><strong>Email:</strong> admin@demo.com</p>
+            <p className="text-sm text-blue-700 dark:text-blue-400"><strong>Password:</strong> (any password)</p>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email Field */}
             <div>
