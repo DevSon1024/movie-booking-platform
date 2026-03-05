@@ -1,14 +1,21 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import { register, clearError } from "../redux/slices/authSlice";
+import { register, clearError } from "../redux/slices/auth.slice";
 import toast from "react-hot-toast";
-import LoadingSpinner from '../components/LoadingSpinner';
-import { FaUser, FaEnvelope, FaLock, FaUserPlus, FaEye, FaEyeSlash } from "react-icons/fa";
-import useDocumentTitle from '../hooks/useDocumentTitle';
+import LoadingSpinner from "../components/LoadingSpinner";
+import {
+  FaUser,
+  FaEnvelope,
+  FaLock,
+  FaUserPlus,
+  FaEye,
+  FaEyeSlash,
+} from "react-icons/fa";
+import useDocumentTitle from "../hooks/useDocumentTitle";
 
 const RegisterPage = () => {
-  useDocumentTitle('Register');
+  useDocumentTitle("Register");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -28,7 +35,7 @@ const RegisterPage = () => {
   useEffect(() => {
     if (userInfo) {
       toast.success(`Welcome, ${userInfo.name}!`);
-      
+
       if (userInfo.role === "admin") {
         navigate("/admin");
       } else {
@@ -58,7 +65,7 @@ const RegisterPage = () => {
         name: formData.name,
         email: formData.email,
         password: formData.password,
-      })
+      }),
     );
   };
 
@@ -171,10 +178,15 @@ const RegisterPage = () => {
                   type="button"
                   className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer transition-colors"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                  aria-label={
+                    showConfirmPassword
+                      ? "Hide confirm password"
+                      : "Show confirm password"
+                  }
                 >
                   {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
-                </button>              </div>
+                </button>{" "}
+              </div>
             </div>
 
             {/* Submit Button */}

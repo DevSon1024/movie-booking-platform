@@ -1,14 +1,20 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import { login, clearError } from "../redux/slices/authSlice";
+import { login, clearError } from "../redux/slices/auth.slice";
 import toast from "react-hot-toast";
-import LoadingSpinner from '../components/LoadingSpinner';
-import { FaEnvelope, FaLock, FaSignInAlt, FaEye, FaEyeSlash } from "react-icons/fa";
-import useDocumentTitle from '../hooks/useDocumentTitle';
+import LoadingSpinner from "../components/LoadingSpinner";
+import {
+  FaEnvelope,
+  FaLock,
+  FaSignInAlt,
+  FaEye,
+  FaEyeSlash,
+} from "react-icons/fa";
+import useDocumentTitle from "../hooks/useDocumentTitle";
 
 const LoginPage = () => {
-  useDocumentTitle('Login');
+  useDocumentTitle("Login");
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
 
@@ -55,9 +61,15 @@ const LoginPage = () => {
         <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700">
           {/* Demo Credentials Hint */}
           <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 rounded-r-lg">
-            <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-1">Demo Credentials:</h3>
-            <p className="text-sm text-blue-700 dark:text-blue-400"><strong>Email:</strong> admin@demo.com</p>
-            <p className="text-sm text-blue-700 dark:text-blue-400"><strong>Password:</strong> (any password)</p>
+            <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-1">
+              Demo Credentials:
+            </h3>
+            <p className="text-sm text-blue-700 dark:text-blue-400">
+              <strong>Email:</strong> admin@demo.com
+            </p>
+            <p className="text-sm text-blue-700 dark:text-blue-400">
+              <strong>Password:</strong> (any password)
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">

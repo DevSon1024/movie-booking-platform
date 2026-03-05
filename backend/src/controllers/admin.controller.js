@@ -1,7 +1,7 @@
-import Booking from '../models/Booking.js';
-import Movie from '../models/Movie.js';
-import User from '../models/User.js';
-import Theatre from '../models/Theatre.js';
+import Booking from "../models/Booking.model.js";
+import Movie from "../models/Movie.model.js";
+import User from "../models/User.model.js";
+import Theatre from "../models/Theatre.model.js";
 
 // @desc    Get Admin Dashboard Stats (Revenue, Tickets, Active Movies, Users, Theatres, Revenue Trend)
 // @route   GET /api/admin/stats
@@ -25,15 +25,15 @@ const getDashboardStats = async (req, res) => {
     const stats = await Booking.aggregate([
       {
         $match: {
-          paymentStatus: 'CONFIRMED',
+          paymentStatus: "CONFIRMED",
           ...dateFilter,
         },
       },
       {
         $group: {
           _id: null,
-          totalRevenue: { $sum: '$totalPrice' },
-          totalTickets: { $sum: { $size: '$seats' } },
+          totalRevenue: { $sum: "$totalPrice" },
+          totalTickets: { $sum: { $size: "$seats" } },
         },
       },
     ]);
@@ -42,7 +42,7 @@ const getDashboardStats = async (req, res) => {
     const ticketsSold = stats.length > 0 ? stats[0].totalTickets : 0;
 
     // 3. Count Active Movies (Status = 'RUNNING')
-    const activeMovies = await Movie.countDocuments({ status: 'RUNNING' });
+    const activeMovies = await Movie.countDocuments({ status: "RUNNING" });
 
     // 4. Count Total Users & Theatres (global counts, not date-filtered)
     const totalUsers = await User.countDocuments();
@@ -52,17 +52,17 @@ const getDashboardStats = async (req, res) => {
     const revenueTrend = await Booking.aggregate([
       {
         $match: {
-          paymentStatus: 'CONFIRMED',
+          paymentStatus: "CONFIRMED",
           ...dateFilter,
         },
       },
       {
         $group: {
           _id: {
-            $dateToString: { format: '%Y-%m-%d', date: '$createdAt' },
+            $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
           },
-          dailyRevenue: { $sum: '$totalPrice' },
-          dailyTickets: { $sum: { $size: '$seats' } },
+          dailyRevenue: { $sum: "$totalPrice" },
+          dailyTickets: { $sum: { $size: "$seats" } },
         },
       },
       {
@@ -71,7 +71,7 @@ const getDashboardStats = async (req, res) => {
       {
         $project: {
           _id: 0,
-          date: '$_id',
+          date: "$_id",
           dailyRevenue: 1,
           dailyTickets: 1,
         },
@@ -88,7 +88,7 @@ const getDashboardStats = async (req, res) => {
     });
   } catch (error) {
     res.status(500);
-    throw new Error('Error fetching dashboard stats: ' + error.message);
+    throw new Error("Error fetching dashboard stats: " + error.message);
   }
 };
 

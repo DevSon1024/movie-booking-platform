@@ -1,20 +1,20 @@
-import SystemSetting from '../models/SystemSetting.js';
+import SystemSetting from "../models/SystemSetting.model.js";
 
 // @desc    Get Global Settings
 // @route   GET /api/settings
 // @access  Public
 const getSettings = async (req, res) => {
   let settings = await SystemSetting.findOne();
-  
+
   // Auto-seed if missing
   if (!settings) {
     settings = await SystemSetting.create({
-      siteName: 'MovieDeck',
-      currencySymbol: '$',
-      currencyCode: 'USD'
+      siteName: "MovieDeck",
+      currencySymbol: "$",
+      currencyCode: "USD",
     });
   }
-  
+
   res.json(settings);
 };
 
@@ -23,14 +23,14 @@ const getSettings = async (req, res) => {
 // @access  Private/Admin
 const updateSettings = async (req, res) => {
   const { siteName, currencySymbol, currencyCode } = req.body;
-  
+
   let settings = await SystemSetting.findOne();
-  
+
   if (settings) {
     settings.siteName = siteName || settings.siteName;
     settings.currencySymbol = currencySymbol || settings.currencySymbol;
     settings.currencyCode = currencyCode || settings.currencyCode;
-    
+
     const updatedSettings = await settings.save();
     res.json(updatedSettings);
   } else {
@@ -38,7 +38,7 @@ const updateSettings = async (req, res) => {
     const newSettings = await SystemSetting.create({
       siteName,
       currencySymbol,
-      currencyCode
+      currencyCode,
     });
     res.json(newSettings);
   }

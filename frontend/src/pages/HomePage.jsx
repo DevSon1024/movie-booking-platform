@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+﻿import { useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import api from '../services/api';
@@ -239,7 +239,7 @@ const HomePage = () => {
                      <span className="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-full backdrop-blur-sm"><FaGlobe className="text-blue-400" /> {trendingMovies[currentHeroSlide].language}</span>
                   </div>
 
-                  <p className="text-gray-300 text-base mb-8 line-clamp-3 max-w-xl hidden sm:block leading-relaxed animate-fade-in-up" key={`desc-${currentHeroSlide}`}>
+                  <p className="text-gray-300 text-base mb-8 max-w-xl hidden sm:block animate-fade-in-up overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.6em', maxHeight: '3.2em' }} key={`desc-${currentHeroSlide}`}>
                      {trendingMovies[currentHeroSlide].description}
                   </p>
 

@@ -1,38 +1,49 @@
-import { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { setCredentials } from '../redux/slices/authSlice';
-import api from '../services/api';
-import toast from 'react-hot-toast';
-import { getProfile, updateProfile, changePassword } from '../services/profileService';
-import LoadingSpinner from '../components/LoadingSpinner';
-import { FaUser, FaLock, FaEye, FaEyeSlash, FaSave, FaTimes } from 'react-icons/fa';
+import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { setCredentials } from "../redux/slices/auth.slice";
+import api from "../services/api";
+import toast from "react-hot-toast";
+import {
+  getProfile,
+  updateProfile,
+  changePassword,
+} from "../services/profileService";
+import LoadingSpinner from "../components/LoadingSpinner";
+import {
+  FaUser,
+  FaLock,
+  FaEye,
+  FaEyeSlash,
+  FaSave,
+  FaTimes,
+} from "react-icons/fa";
 
 const ProfilePage = () => {
   const dispatch = useDispatch();
   const location = useLocation();
   const { userInfo } = useSelector((state) => state.auth);
   const { currencySymbol } = useSelector((state) => state.settings);
-  
-  const [activeTab, setActiveTab] = useState(location.state?.tab || 'profile');
+
+  const [activeTab, setActiveTab] = useState(location.state?.tab || "profile");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  
+
   // Profile data
   const [profile, setProfile] = useState({
-    name: '',
-    email: '',
-    city: '',
-    phone: '',
+    name: "",
+    email: "",
+    city: "",
+    phone: "",
   });
-  
+
   // Password data
   const [passwordData, setPasswordData] = useState({
-    oldPassword: '',
-    newPassword: '',
-    confirmPassword: '',
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
-  
+
   const [showPasswords, setShowPasswords] = useState({
     old: false,
     new: false,
@@ -47,15 +58,15 @@ const ProfilePage = () => {
     try {
       setLoading(true);
       const profileData = await getProfile();
-      
+
       setProfile({
-        name: profileData.name || '',
-        email: profileData.email || '',
-        city: profileData.city || '',
-        phone: profileData.phone || '',
+        name: profileData.name || "",
+        email: profileData.email || "",
+        city: profileData.city || "",
+        phone: profileData.phone || "",
       });
     } catch (error) {
-      toast.error('Failed to load profile data');
+      toast.error("Failed to load profile data");
       console.error(error);
     } finally {
       setLoading(false);
@@ -78,26 +89,28 @@ const ProfilePage = () => {
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!profile.name || !profile.email) {
-      toast.error('Name and email are required');
+      toast.error("Name and email are required");
       return;
     }
 
     try {
       setSaving(true);
       const updatedProfile = await updateProfile(profile);
-      
+
       // Update Redux store
-      dispatch(setCredentials({
-        ...userInfo,
-        name: updatedProfile.name,
-        email: updatedProfile.email,
-      }));
-      
-      toast.success('Profile updated successfully');
+      dispatch(
+        setCredentials({
+          ...userInfo,
+          name: updatedProfile.name,
+          email: updatedProfile.email,
+        }),
+      );
+
+      toast.success("Profile updated successfully");
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to update profile');
+      toast.error(error.response?.data?.message || "Failed to update profile");
     } finally {
       setSaving(false);
     }
@@ -105,19 +118,23 @@ const ProfilePage = () => {
 
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!passwordData.oldPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
-      toast.error('All password fields are required');
+
+    if (
+      !passwordData.oldPassword ||
+      !passwordData.newPassword ||
+      !passwordData.confirmPassword
+    ) {
+      toast.error("All password fields are required");
       return;
     }
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast.error('New passwords do not match');
+      toast.error("New passwords do not match");
       return;
     }
 
     if (passwordData.newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters');
+      toast.error("Password must be at least 6 characters");
       return;
     }
 
@@ -127,16 +144,16 @@ const ProfilePage = () => {
         oldPassword: passwordData.oldPassword,
         newPassword: passwordData.newPassword,
       });
-      
+
       setPasswordData({
-        oldPassword: '',
-        newPassword: '',
-        confirmPassword: '',
+        oldPassword: "",
+        newPassword: "",
+        confirmPassword: "",
       });
-      
-      toast.success('Password changed successfully');
+
+      toast.success("Password changed successfully");
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to change password');
+      toast.error(error.response?.data?.message || "Failed to change password");
     } finally {
       setSaving(false);
     }
@@ -144,9 +161,9 @@ const ProfilePage = () => {
 
   const handleCancelPassword = () => {
     setPasswordData({
-      oldPassword: '',
-      newPassword: '',
-      confirmPassword: '',
+      oldPassword: "",
+      newPassword: "",
+      confirmPassword: "",
     });
   };
 
@@ -176,21 +193,21 @@ const ProfilePage = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="flex border-b border-gray-200 dark:border-gray-700">
             <button
-              onClick={() => setActiveTab('profile')}
+              onClick={() => setActiveTab("profile")}
               className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${
-                activeTab === 'profile'
-                  ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-b-2 border-red-600 dark:border-red-400'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                activeTab === "profile"
+                  ? "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-b-2 border-red-600 dark:border-red-400"
+                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50"
               }`}
             >
               <FaUser /> Profile Info
             </button>
             <button
-              onClick={() => setActiveTab('password')}
+              onClick={() => setActiveTab("password")}
               className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${
-                activeTab === 'password'
-                  ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-b-2 border-red-600 dark:border-red-400'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                activeTab === "password"
+                  ? "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-b-2 border-red-600 dark:border-red-400"
+                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50"
               }`}
             >
               <FaLock /> Change Password
@@ -200,7 +217,7 @@ const ProfilePage = () => {
           {/* Tab Content */}
           <div className="p-6">
             {/* Profile Tab */}
-            {activeTab === 'profile' && (
+            {activeTab === "profile" && (
               <form onSubmit={handleProfileSubmit} className="space-y-6">
                 <div>
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
@@ -276,14 +293,14 @@ const ProfilePage = () => {
                     className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <FaSave />
-                    {saving ? 'Saving...' : 'Save Changes'}
+                    {saving ? "Saving..." : "Save Changes"}
                   </button>
                 </div>
               </form>
             )}
 
             {/* Password Tab */}
-            {activeTab === 'password' && (
+            {activeTab === "password" && (
               <form onSubmit={handlePasswordSubmit} className="space-y-6">
                 <div>
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
@@ -301,7 +318,7 @@ const ProfilePage = () => {
                     </label>
                     <input
                       type="text"
-                      value={userInfo?.name || ''}
+                      value={userInfo?.name || ""}
                       disabled
                       className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-500 dark:text-gray-400 cursor-not-allowed"
                     />
@@ -313,7 +330,7 @@ const ProfilePage = () => {
                     </label>
                     <div className="relative">
                       <input
-                        type={showPasswords.old ? 'text' : 'password'}
+                        type={showPasswords.old ? "text" : "password"}
                         name="oldPassword"
                         value={passwordData.oldPassword}
                         onChange={handlePasswordChange}
@@ -322,7 +339,7 @@ const ProfilePage = () => {
                       />
                       <button
                         type="button"
-                        onClick={() => togglePasswordVisibility('old')}
+                        onClick={() => togglePasswordVisibility("old")}
                         className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                       >
                         {showPasswords.old ? <FaEyeSlash /> : <FaEye />}
@@ -336,7 +353,7 @@ const ProfilePage = () => {
                     </label>
                     <div className="relative">
                       <input
-                        type={showPasswords.new ? 'text' : 'password'}
+                        type={showPasswords.new ? "text" : "password"}
                         name="newPassword"
                         value={passwordData.newPassword}
                         onChange={handlePasswordChange}
@@ -345,7 +362,7 @@ const ProfilePage = () => {
                       />
                       <button
                         type="button"
-                        onClick={() => togglePasswordVisibility('new')}
+                        onClick={() => togglePasswordVisibility("new")}
                         className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                       >
                         {showPasswords.new ? <FaEyeSlash /> : <FaEye />}
@@ -359,7 +376,7 @@ const ProfilePage = () => {
                     </label>
                     <div className="relative">
                       <input
-                        type={showPasswords.confirm ? 'text' : 'password'}
+                        type={showPasswords.confirm ? "text" : "password"}
                         name="confirmPassword"
                         value={passwordData.confirmPassword}
                         onChange={handlePasswordChange}
@@ -368,7 +385,7 @@ const ProfilePage = () => {
                       />
                       <button
                         type="button"
-                        onClick={() => togglePasswordVisibility('confirm')}
+                        onClick={() => togglePasswordVisibility("confirm")}
                         className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                       >
                         {showPasswords.confirm ? <FaEyeSlash /> : <FaEye />}
@@ -384,7 +401,7 @@ const ProfilePage = () => {
                     className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <FaLock />
-                    {saving ? 'Changing...' : 'Reset Password'}
+                    {saving ? "Changing..." : "Reset Password"}
                   </button>
                   <button
                     type="button"

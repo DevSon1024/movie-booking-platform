@@ -1,6 +1,6 @@
-import Review from '../models/Review.js';
-import Booking from '../models/Booking.js';
-import Movie from '../models/Movie.js';
+import Review from "../models/Review.model.js";
+import Booking from "../models/Booking.model.js";
+import Movie from "../models/Movie.model.js";
 
 // @desc    Create a review
 // @route   POST /api/reviews
@@ -11,23 +11,28 @@ const createReview = async (req, res) => {
 
     // Validation
     if (!movieId || !rating || !comment) {
-      return res.status(400).json({ message: 'Please provide movieId, rating, and comment' });
+      return res
+        .status(400)
+        .json({ message: "Please provide movieId, rating, and comment" });
     }
 
     if (rating < 1 || rating > 5) {
-      return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+      return res
+        .status(400)
+        .json({ message: "Rating must be between 1 and 5" });
     }
 
     // 1. Check if movie exists
     const movie = await Movie.findById(movieId);
     if (!movie) {
-      return res.status(404).json({ message: 'Movie not found' });
+      return res.status(404).json({ message: "Movie not found" });
     }
 
     // 2. CRITICAL RULE: Only RUNNING or ENDED movies can be reviewed
-    if (movie.status === 'UPCOMING') {
-      return res.status(403).json({ 
-        message: 'Cannot review upcoming movies. Wait until the movie is released and running.' 
+    if (movie.status === "UPCOMING") {
+      return res.status(403).json({
+        message:
+          "Cannot review upcoming movies. Wait until the movie is released and running.",
       });
     }
 
@@ -38,27 +43,31 @@ const createReview = async (req, res) => {
     });
 
     if (alreadyReviewed) {
-      return res.status(400).json({ message: 'You have already reviewed this movie' });
+      return res
+        .status(400)
+        .json({ message: "You have already reviewed this movie" });
     }
 
     // 4. VERIFICATION LOGIC - Check if user has booking for this movie
-    const bookings = await Booking.find({ 
-      user: req.user._id, 
+    const bookings = await Booking.find({
+      user: req.user._id,
       movie: movieId,
-      paymentStatus: 'CONFIRMED'
-    }).populate('show');
+      paymentStatus: "CONFIRMED",
+    }).populate("show");
 
     let isVerifiedWatcher = false;
 
     if (bookings.length > 0) {
       const currentTime = new Date();
-      
+
       // Check if any show has finished
       for (let booking of bookings) {
         // Calculate show end time (startTime + movie duration + buffer)
         const showStartTime = new Date(booking.show.startTime);
-        const showEndTime = new Date(showStartTime.getTime() + (movie.duration + 30) * 60000); // duration in minutes + 30 min buffer
-        
+        const showEndTime = new Date(
+          showStartTime.getTime() + (movie.duration + 30) * 60000,
+        ); // duration in minutes + 30 min buffer
+
         // If current time >= show end time, user has watched the movie
         if (currentTime >= showEndTime) {
           isVerifiedWatcher = true;
@@ -67,39 +76,38 @@ const createReview = async (req, res) => {
       }
 
       // Special case: If movie status is ENDED and user has booking, they're verified
-      if (movie.status === 'ENDED') {
+      if (movie.status === "ENDED") {
         isVerifiedWatcher = true;
       }
     }
 
     // 5. Allow review for RUNNING/ENDED movies even without booking (but mark as unverified)
     // Users can review based on watching in other platforms, but they won't get "Verified" badge
-    
+
     // Create Review
     const review = new Review({
       user: req.user._id,
       movie: movieId,
       rating,
       comment,
-      isVerifiedWatcher
+      isVerifiedWatcher,
     });
 
     await review.save();
 
     // Populate user details before sending response
-    await review.populate('user', 'name email');
+    await review.populate("user", "name email");
 
-    res.status(201).json({ 
-      message: isVerifiedWatcher 
-        ? 'Review added successfully! You are a verified watcher.' 
-        : 'Review added successfully!',
+    res.status(201).json({
+      message: isVerifiedWatcher
+        ? "Review added successfully! You are a verified watcher."
+        : "Review added successfully!",
       review,
-      isVerifiedWatcher
+      isVerifiedWatcher,
     });
-
   } catch (error) {
-    console.error('Create Review Error:', error);
-    res.status(500).json({ message: 'Server error while creating review' });
+    console.error("Create Review Error:", error);
+    res.status(500).json({ message: "Server error while creating review" });
   }
 };
 
@@ -109,22 +117,23 @@ const createReview = async (req, res) => {
 const getMovieReviews = async (req, res) => {
   try {
     const reviews = await Review.find({ movie: req.params.movieId })
-      .populate('user', 'name email')
+      .populate("user", "name email")
       .sort({ createdAt: -1 });
 
     // Calculate average rating
     const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
-    const averageRating = reviews.length > 0 ? (totalRating / reviews.length).toFixed(1) : 0;
+    const averageRating =
+      reviews.length > 0 ? (totalRating / reviews.length).toFixed(1) : 0;
 
     res.json({
       reviews,
       count: reviews.length,
       averageRating: parseFloat(averageRating),
-      verifiedCount: reviews.filter(r => r.isVerifiedWatcher).length
+      verifiedCount: reviews.filter((r) => r.isVerifiedWatcher).length,
     });
   } catch (error) {
-    console.error('Get Reviews Error:', error);
-    res.status(500).json({ message: 'Server error while fetching reviews' });
+    console.error("Get Reviews Error:", error);
+    res.status(500).json({ message: "Server error while fetching reviews" });
   }
 };
 
@@ -138,33 +147,37 @@ const updateReview = async (req, res) => {
     const review = await Review.findById(req.params.reviewId);
 
     if (!review) {
-      return res.status(404).json({ message: 'Review not found' });
+      return res.status(404).json({ message: "Review not found" });
     }
 
     // Check if the user owns this review
     if (review.user.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'You can only update your own reviews' });
+      return res
+        .status(403)
+        .json({ message: "You can only update your own reviews" });
     }
 
     // Update fields
     if (rating) {
       if (rating < 1 || rating > 5) {
-        return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+        return res
+          .status(400)
+          .json({ message: "Rating must be between 1 and 5" });
       }
       review.rating = rating;
     }
-    
+
     if (comment) {
       review.comment = comment;
     }
 
     await review.save();
-    await review.populate('user', 'name email');
+    await review.populate("user", "name email");
 
-    res.json({ message: 'Review updated successfully', review });
+    res.json({ message: "Review updated successfully", review });
   } catch (error) {
-    console.error('Update Review Error:', error);
-    res.status(500).json({ message: 'Server error while updating review' });
+    console.error("Update Review Error:", error);
+    res.status(500).json({ message: "Server error while updating review" });
   }
 };
 
@@ -176,20 +189,25 @@ const deleteReview = async (req, res) => {
     const review = await Review.findById(req.params.reviewId);
 
     if (!review) {
-      return res.status(404).json({ message: 'Review not found' });
+      return res.status(404).json({ message: "Review not found" });
     }
 
     // Check if the user owns this review or is admin
-    if (review.user.toString() !== req.user._id.toString() && req.user.role !== 'ADMIN') {
-      return res.status(403).json({ message: 'You can only delete your own reviews' });
+    if (
+      review.user.toString() !== req.user._id.toString() &&
+      req.user.role !== "ADMIN"
+    ) {
+      return res
+        .status(403)
+        .json({ message: "You can only delete your own reviews" });
     }
 
     await review.deleteOne();
 
-    res.json({ message: 'Review deleted successfully' });
+    res.json({ message: "Review deleted successfully" });
   } catch (error) {
-    console.error('Delete Review Error:', error);
-    res.status(500).json({ message: 'Server error while deleting review' });
+    console.error("Delete Review Error:", error);
+    res.status(500).json({ message: "Server error while deleting review" });
   }
 };
 
@@ -199,13 +217,15 @@ const deleteReview = async (req, res) => {
 const getMyReviews = async (req, res) => {
   try {
     const reviews = await Review.find({ user: req.user._id })
-      .populate('movie', 'title posterUrl status')
+      .populate("movie", "title posterUrl status")
       .sort({ createdAt: -1 });
 
     res.json(reviews);
   } catch (error) {
-    console.error('Get My Reviews Error:', error);
-    res.status(500).json({ message: 'Server error while fetching your reviews' });
+    console.error("Get My Reviews Error:", error);
+    res
+      .status(500)
+      .json({ message: "Server error while fetching your reviews" });
   }
 };
 
@@ -218,12 +238,12 @@ const canReviewMovie = async (req, res) => {
 
     const movie = await Movie.findById(movieId);
     if (!movie) {
-      return res.status(404).json({ message: 'Movie not found' });
+      return res.status(404).json({ message: "Movie not found" });
     }
 
     // Check if movie is RUNNING or ENDED
-    const canReview = movie.status === 'RUNNING' || movie.status === 'ENDED';
-    
+    const canReview = movie.status === "RUNNING" || movie.status === "ENDED";
+
     // Check if already reviewed
     const alreadyReviewed = await Review.findOne({
       movie: movieId,
@@ -231,10 +251,10 @@ const canReviewMovie = async (req, res) => {
     });
 
     // Check if user has booking
-    const hasBooking = await Booking.exists({ 
-      user: req.user._id, 
+    const hasBooking = await Booking.exists({
+      user: req.user._id,
       movie: movieId,
-      paymentStatus: 'CONFIRMED'
+      paymentStatus: "CONFIRMED",
     });
 
     res.json({
@@ -242,11 +262,13 @@ const canReviewMovie = async (req, res) => {
       movieStatus: movie.status,
       alreadyReviewed: !!alreadyReviewed,
       hasBooking: !!hasBooking,
-      willBeVerified: !!hasBooking
+      willBeVerified: !!hasBooking,
     });
   } catch (error) {
-    console.error('Can Review Check Error:', error);
-    res.status(500).json({ message: 'Server error while checking review eligibility' });
+    console.error("Can Review Check Error:", error);
+    res
+      .status(500)
+      .json({ message: "Server error while checking review eligibility" });
   }
 };
 
@@ -256,28 +278,30 @@ const canReviewMovie = async (req, res) => {
 const toggleVoteReview = async (req, res) => {
   try {
     const { action } = req.body; // 'like' or 'dislike'
-    
-    if (!['like', 'dislike'].includes(action)) {
-       return res.status(400).json({ message: 'Invalid vote action' });
+
+    if (!["like", "dislike"].includes(action)) {
+      return res.status(400).json({ message: "Invalid vote action" });
     }
 
     const review = await Review.findById(req.params.reviewId);
 
     if (!review) {
-      return res.status(404).json({ message: 'Review not found' });
+      return res.status(404).json({ message: "Review not found" });
     }
 
     const userId = req.user._id;
 
     // Check if the user is interacting with their own review
     if (review.user.toString() === userId.toString()) {
-       return res.status(403).json({ message: 'You cannot vote on your own review' });
+      return res
+        .status(403)
+        .json({ message: "You cannot vote on your own review" });
     }
 
     const hasLiked = review.likes.includes(userId);
     const hasDisliked = review.dislikes.includes(userId);
 
-    if (action === 'like') {
+    if (action === "like") {
       if (hasLiked) {
         // Undo like
         review.likes.pull(userId);
@@ -286,7 +310,7 @@ const toggleVoteReview = async (req, res) => {
         review.likes.push(userId);
         if (hasDisliked) review.dislikes.pull(userId);
       }
-    } else if (action === 'dislike') {
+    } else if (action === "dislike") {
       if (hasDisliked) {
         // Undo dislike
         review.dislikes.pull(userId);
@@ -298,27 +322,30 @@ const toggleVoteReview = async (req, res) => {
     }
 
     await review.save();
-    
+
     // We return the updated counts and user status
-    res.json({ 
-      message: 'Vote updated',
+    res.json({
+      message: "Vote updated",
       likes: review.likes.length,
       dislikes: review.dislikes.length,
-      userVote: review.likes.includes(userId) ? 'like' : (review.dislikes.includes(userId) ? 'dislike' : null)
+      userVote: review.likes.includes(userId)
+        ? "like"
+        : review.dislikes.includes(userId)
+          ? "dislike"
+          : null,
     });
-    
   } catch (error) {
-    console.error('Vote Review Error:', error);
-    res.status(500).json({ message: 'Server error while processing vote' });
+    console.error("Vote Review Error:", error);
+    res.status(500).json({ message: "Server error while processing vote" });
   }
 };
 
-export { 
-  createReview, 
-  getMovieReviews, 
-  updateReview, 
-  deleteReview, 
+export {
+  createReview,
+  getMovieReviews,
+  updateReview,
+  deleteReview,
   getMyReviews,
   canReviewMovie,
-  toggleVoteReview
+  toggleVoteReview,
 };

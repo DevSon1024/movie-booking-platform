@@ -1,4 +1,4 @@
-import Theatre from '../models/Theatre.js';
+import Theatre from "../models/Theatre.model.js";
 
 // @desc    Create a theatre
 // @route   POST /api/theatres
@@ -24,8 +24,8 @@ const createTheatre = async (req, res) => {
 // @access  Public
 const getTheatres = async (req, res) => {
   const { city } = req.query;
-  const query = city ? { city: { $regex: city, $options: 'i' } } : {};
-  
+  const query = city ? { city: { $regex: city, $options: "i" } } : {};
+
   const theatres = await Theatre.find(query).sort({ createdAt: -1 });
   res.json(theatres);
 };
@@ -39,7 +39,7 @@ const getTheatreById = async (req, res) => {
     res.json(theatre);
   } else {
     res.status(404);
-    throw new Error('Theatre not found');
+    throw new Error("Theatre not found");
   }
 };
 
@@ -60,7 +60,7 @@ const updateTheatre = async (req, res) => {
     res.json(updatedTheatre);
   } else {
     res.status(404);
-    throw new Error('Theatre not found');
+    throw new Error("Theatre not found");
   }
 };
 
@@ -72,11 +72,17 @@ const deleteTheatre = async (req, res) => {
 
   if (theatre) {
     await theatre.deleteOne();
-    res.json({ message: 'Theatre removed' });
+    res.json({ message: "Theatre removed" });
   } else {
     res.status(404);
-    throw new Error('Theatre not found');
+    throw new Error("Theatre not found");
   }
 };
 
-export { createTheatre, getTheatres, getTheatreById, updateTheatre, deleteTheatre };
+export {
+  createTheatre,
+  getTheatres,
+  getTheatreById,
+  updateTheatre,
+  deleteTheatre,
+};
