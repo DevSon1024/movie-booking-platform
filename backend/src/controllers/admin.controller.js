@@ -48,7 +48,7 @@ const getDashboardStats = async (req, res) => {
     const totalUsers = await User.countDocuments();
     const totalTheatres = await Theatre.countDocuments();
 
-    // 5. Revenue Trend — daily breakdown of confirmed bookings
+    // 5. Revenue Trend - daily breakdown of confirmed bookings
     const revenueTrend = await Booking.aggregate([
       {
         $match: {

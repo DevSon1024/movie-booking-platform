@@ -77,7 +77,7 @@ const getUserById = async (req, res) => {
       .lean();
 
     // Get user reviews
-    const Review = (await import("../models/Review.js")).default;
+    const Review = (await import("../models/Review.model.js")).default;
     const reviews = await Review.find({ user: user._id })
       .populate("movie", "title posterUrl")
       .sort({ createdAt: -1 })

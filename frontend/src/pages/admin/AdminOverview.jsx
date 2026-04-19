@@ -1,22 +1,34 @@
-import { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
-import { FaFilm, FaTicketAlt, FaMoneyBillWave, FaFilter, FaUsers, FaBuilding } from 'react-icons/fa';
+import { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
 import {
-  LineChart, Line,
-  BarChart, Bar,
-  XAxis, YAxis,
-  CartesianGrid, Tooltip,
-  Legend, ResponsiveContainer,
-} from 'recharts';
-import { getAdminStats } from '../../services/adminService';
-import { AnalyticsCardSkeleton } from '../../components/SkeletonLoader';
+  FaFilm,
+  FaTicketAlt,
+  FaMoneyBillWave,
+  FaFilter,
+  FaUsers,
+  FaBuilding,
+} from "react-icons/fa";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import { getAdminStats } from "../../services/adminService";
+import { AnalyticsCardSkeleton } from "../../components/SkeletonLoader";
 
 const ICON_COLORS = {
-  green:  '#16a34a',
-  blue:   '#2563eb',
-  purple: '#9333ea',
-  orange: '#ea580c',
-  teal:   '#0d9488',
+  green: "#16a34a",
+  blue: "#2563eb",
+  purple: "#9333ea",
+  orange: "#ea580c",
+  teal: "#0d9488",
 };
 
 const AdminOverview = () => {
@@ -30,7 +42,10 @@ const AdminOverview = () => {
     totalTheatres: 0,
     revenueTrend: [],
   });
-  const [dateRange, setDateRange] = useState({ startDate: '', endDate: new Date().toISOString().split('T')[0] });
+  const [dateRange, setDateRange] = useState({
+    startDate: "",
+    endDate: new Date().toISOString().split("T")[0],
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -39,10 +54,13 @@ const AdminOverview = () => {
       try {
         setLoading(true);
         setError(null);
-        const data = await getAdminStats(dateRange.startDate, dateRange.endDate);
+        const data = await getAdminStats(
+          dateRange.startDate,
+          dateRange.endDate,
+        );
         setStats(data);
       } catch (err) {
-        setError('Failed to load dashboard stats');
+        setError("Failed to load dashboard stats");
       } finally {
         setLoading(false);
       }
@@ -55,11 +73,36 @@ const AdminOverview = () => {
   };
 
   const statCards = [
-    { title: 'Total Revenue',   value: `${currencySymbol}${stats.revenue.toLocaleString()}`, icon: <FaMoneyBillWave />, color: ICON_COLORS.green },
-    { title: 'Tickets Sold',    value: stats.ticketsSold,   icon: <FaTicketAlt />,          color: ICON_COLORS.blue   },
-    { title: 'Active Movies',   value: stats.activeMovies,  icon: <FaFilm />,               color: ICON_COLORS.purple },
-    { title: 'Total Users',     value: stats.totalUsers,    icon: <FaUsers />,              color: ICON_COLORS.orange },
-    { title: 'Total Theatres',  value: stats.totalTheatres, icon: <FaBuilding />,           color: ICON_COLORS.teal   },
+    {
+      title: "Total Revenue",
+      value: `${currencySymbol}${stats.revenue.toLocaleString()}`,
+      icon: <FaMoneyBillWave />,
+      color: ICON_COLORS.green,
+    },
+    {
+      title: "Tickets Sold",
+      value: stats.ticketsSold,
+      icon: <FaTicketAlt />,
+      color: ICON_COLORS.blue,
+    },
+    {
+      title: "Active Movies",
+      value: stats.activeMovies,
+      icon: <FaFilm />,
+      color: ICON_COLORS.purple,
+    },
+    {
+      title: "Total Users",
+      value: stats.totalUsers,
+      icon: <FaUsers />,
+      color: ICON_COLORS.orange,
+    },
+    {
+      title: "Total Theatres",
+      value: stats.totalTheatres,
+      icon: <FaBuilding />,
+      color: ICON_COLORS.teal,
+    },
   ];
 
   const hasTrendData = stats.revenueTrend && stats.revenueTrend.length > 0;
@@ -68,12 +111,16 @@ const AdminOverview = () => {
     <div>
       {/* ── Header + Date Filter ── */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">Dashboard Overview</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">
+          Dashboard Overview
+        </h1>
 
         <div className="flex flex-wrap items-center bg-white dark:bg-gray-800 p-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
           <FaFilter className="text-gray-400 ml-2 mr-3" />
           <div className="flex items-center space-x-2 mr-4">
-            <span className="text-xs text-gray-500 font-bold uppercase">From</span>
+            <span className="text-xs text-gray-500 font-bold uppercase">
+              From
+            </span>
             <input
               type="date"
               name="startDate"
@@ -83,7 +130,9 @@ const AdminOverview = () => {
             />
           </div>
           <div className="flex items-center space-x-2">
-            <span className="text-xs text-gray-500 font-bold uppercase">To</span>
+            <span className="text-xs text-gray-500 font-bold uppercase">
+              To
+            </span>
             <input
               type="date"
               name="endDate"
@@ -116,7 +165,9 @@ const AdminOverview = () => {
                   <p className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider">
                     {stat.title}
                   </p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stat.value}</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                    {stat.value}
+                  </p>
                 </div>
                 <span
                   className="text-white p-3 rounded-lg text-xl"
@@ -131,30 +182,38 @@ const AdminOverview = () => {
           {/* ── Revenue Trend Charts ── */}
           {hasTrendData && (
             <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Line Chart — Daily Revenue */}
+              {/* Line Chart - Daily Revenue */}
               <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
                 <h2 className="text-base font-semibold text-gray-700 dark:text-gray-200 mb-4">
                   Daily Revenue ({currencySymbol})
                 </h2>
                 <ResponsiveContainer width="100%" height={260}>
-                  <LineChart data={stats.revenueTrend} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                  <LineChart
+                    data={stats.revenueTrend}
+                    margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis
                       dataKey="date"
-                      tick={{ fontSize: 11, fill: '#6b7280' }}
+                      tick={{ fontSize: 11, fill: "#6b7280" }}
                       tickLine={false}
                     />
                     <YAxis
-                      tick={{ fontSize: 11, fill: '#6b7280' }}
+                      tick={{ fontSize: 11, fill: "#6b7280" }}
                       tickLine={false}
                       axisLine={false}
-                      tickFormatter={(v) => `${currencySymbol}${v.toLocaleString()}`}
+                      tickFormatter={(v) =>
+                        `${currencySymbol}${v.toLocaleString()}`
+                      }
                     />
                     <Tooltip
-                      formatter={(value) => [`${currencySymbol}${value.toLocaleString()}`, 'Revenue']}
-                      contentStyle={{ borderRadius: '8px', fontSize: '13px' }}
+                      formatter={(value) => [
+                        `${currencySymbol}${value.toLocaleString()}`,
+                        "Revenue",
+                      ]}
+                      contentStyle={{ borderRadius: "8px", fontSize: "13px" }}
                     />
-                    <Legend wrapperStyle={{ fontSize: '12px' }} />
+                    <Legend wrapperStyle={{ fontSize: "12px" }} />
                     <Line
                       type="monotone"
                       dataKey="dailyRevenue"
@@ -168,30 +227,33 @@ const AdminOverview = () => {
                 </ResponsiveContainer>
               </div>
 
-              {/* Bar Chart — Daily Tickets Sold */}
+              {/* Bar Chart - Daily Tickets Sold */}
               <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
                 <h2 className="text-base font-semibold text-gray-700 dark:text-gray-200 mb-4">
                   Daily Tickets Sold
                 </h2>
                 <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={stats.revenueTrend} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                  <BarChart
+                    data={stats.revenueTrend}
+                    margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis
                       dataKey="date"
-                      tick={{ fontSize: 11, fill: '#6b7280' }}
+                      tick={{ fontSize: 11, fill: "#6b7280" }}
                       tickLine={false}
                     />
                     <YAxis
-                      tick={{ fontSize: 11, fill: '#6b7280' }}
+                      tick={{ fontSize: 11, fill: "#6b7280" }}
                       tickLine={false}
                       axisLine={false}
                       allowDecimals={false}
                     />
                     <Tooltip
-                      formatter={(value) => [value, 'Tickets']}
-                      contentStyle={{ borderRadius: '8px', fontSize: '13px' }}
+                      formatter={(value) => [value, "Tickets"]}
+                      contentStyle={{ borderRadius: "8px", fontSize: "13px" }}
                     />
-                    <Legend wrapperStyle={{ fontSize: '12px' }} />
+                    <Legend wrapperStyle={{ fontSize: "12px" }} />
                     <Bar
                       dataKey="dailyTickets"
                       name="Tickets"

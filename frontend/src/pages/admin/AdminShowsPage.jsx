@@ -120,12 +120,23 @@ const AdminShowsPage = () => {
     }
   };
 
-  const calculateShowStatus = (show, isTable = false) => {
-    if (isTable) {
-      const isEnded = show.endTime ? new Date(show.endTime) < new Date() : new Date(show.startTime) < new Date();
-      if (isEnded) {
-         return { label: 'Ended', classes: 'text-gray-500 bg-gray-200 dark:bg-gray-700 dark:text-gray-400' };
-      }
+  const calculateShowStatus = (show) => {
+    // Determine the show end time:
+    // 1. Use explicit endTime if available
+    // 2. Else, add movie duration (minutes) to startTime
+    // 3. Else, fall back to startTime itself
+    let endTime;
+    if (show.endTime) {
+      endTime = new Date(show.endTime);
+    } else if (show.startTime && show.movie?.duration) {
+      endTime = new Date(new Date(show.startTime).getTime() + show.movie.duration * 60 * 1000);
+    } else {
+      endTime = new Date(show.startTime);
+    }
+
+    const isEnded = endTime < new Date();
+    if (isEnded) {
+      return { label: 'Ended', classes: 'text-gray-500 bg-gray-200 dark:bg-gray-700 dark:text-gray-400' };
     }
 
     const totalSeats = show.seats?.length || 0;
