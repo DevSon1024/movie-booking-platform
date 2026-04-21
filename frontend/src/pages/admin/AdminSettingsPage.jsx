@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateSettingsAPI } from '../../services/settingsService';
-import { setGlobalSettings } from '../../redux/slices/settingsSlice';
+import { setGlobalSettings } from '../../redux/slices/settings.slice';
 import toast from 'react-hot-toast';
 import { FaSave, FaGlobe, FaMoneyBill } from 'react-icons/fa';
 
@@ -35,7 +35,7 @@ const AdminSettingsPage = () => {
       }));
       toast.success('Settings Saved Successfully!');
     } catch (error) {
-      toast.error('Failed to update settings');
+      toast.error('Failed to update settings',error);
     }
   };
 
